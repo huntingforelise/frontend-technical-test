@@ -230,6 +230,28 @@ describe('App', () => {
     )
   })
 
+  it('opens an existing conversation instead of creating a duplicate', async () => {
+    const fetchMock = setupFetchMock()
+
+    render(<App />)
+
+    const recipientInput = await screen.findByLabelText(
+      'Nouvelle conversation'
+    )
+
+    fireEvent.change(recipientInput, { target: { value: 'Jeremie' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Creer' }))
+
+    expect(
+      await screen.findByRole('heading', { name: 'Jeremie' })
+    ).toBeInTheDocument()
+    expect(await screen.findByText('Bonjour Jeremie')).toBeInTheDocument()
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      'http://localhost:3005/conversations/1',
+      expect.objectContaining({ method: 'POST' })
+    )
+  })
+
   it('shows contact suggestions while typing a new conversation recipient', async () => {
     setupFetchMock()
 

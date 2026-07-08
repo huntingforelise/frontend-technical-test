@@ -111,6 +111,13 @@ const Home = (): ReactElement => {
     selectedRecipient !== null &&
     selectedRecipient.nickname.toLowerCase() ===
       newConversationRecipientQuery.trim().toLowerCase()
+  const existingConversationForSelectedRecipient = selectedRecipient
+    ? orderedConversations.find(
+        (conversation) =>
+          getConversationParticipant(conversation, loggedUserId).id ===
+          selectedRecipient.id
+      ) ?? null
+    : null
   const shouldShowRecipientSuggestions =
     userState === 'success' &&
     newConversationRecipientQuery.trim().length > 0 &&
@@ -239,6 +246,14 @@ const Home = (): ReactElement => {
     const recipient = selectedRecipient
 
     if (recipient === null || isCreatingConversation) {
+      return
+    }
+
+    if (existingConversationForSelectedRecipient !== null) {
+      setSelectedConversationId(existingConversationForSelectedRecipient.id)
+      setNewConversationRecipientQuery('')
+      setCreateConversationError(null)
+      setIsThreadVisibleOnMobile(true)
       return
     }
 
