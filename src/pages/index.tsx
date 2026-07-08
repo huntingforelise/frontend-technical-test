@@ -333,6 +333,7 @@ const Home = (): ReactElement => {
     <div className={styles.container}>
       <Head>
         <title>Messages - leboncoin</title>
+        <link rel="icon" href="/favicon.ico" />
         <meta
           name="description"
           content="Consultez et envoyez vos messages leboncoin."
