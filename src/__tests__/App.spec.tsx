@@ -189,6 +189,18 @@ describe('App', () => {
         body: expect.stringContaining('Est-ce toujours disponible ?'),
       })
     )
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3005/messages/3',
+      expect.objectContaining({
+        body: expect.stringContaining('"authorId":1'),
+      })
+    )
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3005/messages/3',
+      expect.objectContaining({
+        body: expect.stringContaining('"conversationId":3'),
+      })
+    )
   })
 
   it('creates a new conversation and selects it', async () => {

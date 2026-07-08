@@ -300,6 +300,7 @@ const Home = (): ReactElement => {
     try {
       const createdMessage = await sendMessage(
         selectedConversation.id,
+        loggedUserId,
         body,
         timestamp
       )

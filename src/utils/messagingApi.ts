@@ -48,11 +48,12 @@ export const getUsers = (): Promise<User[]> => {
 
 export const sendMessage = (
   conversationId: number,
+  authorId: number,
   body: string,
   timestamp: number
 ): Promise<CreatedResource> => {
   return request<CreatedResource>(`/messages/${conversationId}`, {
     method: 'POST',
-    body: JSON.stringify({ body, timestamp }),
+    body: JSON.stringify({ authorId, body, conversationId, timestamp }),
   })
 }

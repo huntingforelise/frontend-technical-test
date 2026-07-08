@@ -14,5 +14,20 @@ module.exports = (req, res, next) => {
     return
   }
 
+  if (/messages/.test(req.url) && req.method === 'POST') {
+    const conversationIdFromQuery = Number(req.query?.conversationId)
+    const conversationIdFromPath = Number(req.url.match(/\/messages\/(\d+)/)?.[1])
+    const conversationId = Number.isInteger(conversationIdFromQuery)
+      ? conversationIdFromQuery
+      : conversationIdFromPath
+
+    if (Number.isInteger(conversationId)) {
+      req.body = {
+        ...req.body,
+        conversationId,
+      }
+    }
+  }
+
   next()
 }
