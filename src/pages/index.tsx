@@ -39,7 +39,8 @@ const Home = (): ReactElement => {
   const [conversationState, setConversationState] = useState<LoadState>('idle')
   const [messageState, setMessageState] = useState<LoadState>('idle')
   const [userState, setUserState] = useState<LoadState>('idle')
-  const [newConversationRecipientId, setNewConversationRecipientId] =
+  const [conversationSearch, setConversationSearch] = useState('')
+  const [newConversationRecipientQuery, setNewConversationRecipientQuery] =
     useState('')
   const [isCreatingConversation, setIsCreatingConversation] = useState(false)
   const [createConversationError, setCreateConversationError] = useState<
@@ -54,6 +55,19 @@ const Home = (): ReactElement => {
     () => sortConversations(conversations),
     [conversations]
   )
+  const filteredConversations = useMemo(() => {
+    const normalizedSearch = conversationSearch.trim().toLowerCase()
+
+    if (normalizedSearch.length === 0) {
+      return orderedConversations
+    }
+
+    return orderedConversations.filter((conversation) => {
+      const participant = getConversationParticipant(conversation, loggedUserId)
+
+      return participant.nickname.toLowerCase().includes(normalizedSearch)
+    })
+  }, [conversationSearch, orderedConversations])
   const selectedConversation = useMemo(
     () =>
       orderedConversations.find(
@@ -66,6 +80,40 @@ const Home = (): ReactElement => {
     () => users.filter((user) => user.id !== loggedUserId),
     [users]
   )
+  const matchingRecipients = useMemo(() => {
+    const normalizedQuery = newConversationRecipientQuery.trim().toLowerCase()
+
+    if (normalizedQuery.length === 0) {
+      return availableRecipients
+    }
+
+    return availableRecipients.filter((user) =>
+      user.nickname.toLowerCase().includes(normalizedQuery)
+    )
+  }, [availableRecipients, newConversationRecipientQuery])
+  const selectedRecipient = useMemo(() => {
+    const normalizedQuery = newConversationRecipientQuery.trim().toLowerCase()
+
+    if (normalizedQuery.length === 0) {
+      return null
+    }
+
+    return (
+      availableRecipients.find(
+        (user) => user.nickname.toLowerCase() === normalizedQuery
+      ) ??
+      (matchingRecipients.length === 1 ? matchingRecipients[0] : null)
+    )
+  }, [availableRecipients, matchingRecipients, newConversationRecipientQuery])
+  const hasExactRecipientMatch =
+    selectedRecipient !== null &&
+    selectedRecipient.nickname.toLowerCase() ===
+      newConversationRecipientQuery.trim().toLowerCase()
+  const shouldShowRecipientSuggestions =
+    userState === 'success' &&
+    newConversationRecipientQuery.trim().length > 0 &&
+    matchingRecipients.length > 0 &&
+    !hasExactRecipientMatch
   const loggedUser = users.find((user) => user.id === loggedUserId) ?? {
     id: loggedUserId,
     nickname: 'Thibaut',
@@ -113,18 +161,6 @@ const Home = (): ReactElement => {
 
       setUsers(result)
       setUserState('success')
-      setNewConversationRecipientId((currentRecipientId) => {
-        if (
-          currentRecipientId !== '' &&
-          result.some((user) => String(user.id) === currentRecipientId)
-        ) {
-          return currentRecipientId
-        }
-
-        return (
-          result.find((user) => user.id !== loggedUserId)?.id.toString() ?? ''
-        )
-      })
     } catch {
       setUserState('error')
     }
@@ -198,10 +234,9 @@ const Home = (): ReactElement => {
   ): Promise<void> => {
     event.preventDefault()
 
-    const recipientId = Number(newConversationRecipientId)
-    const recipient = users.find((user) => user.id === recipientId)
+    const recipient = selectedRecipient
 
-    if (recipient === undefined || isCreatingConversation) {
+    if (recipient === null || isCreatingConversation) {
       return
     }
 
@@ -234,6 +269,7 @@ const Home = (): ReactElement => {
       setMessages([])
       setMessageState('success')
       setDraft('')
+      setNewConversationRecipientQuery('')
       setIsThreadVisibleOnMobile(true)
     } catch {
       setCreateConversationError(
@@ -322,74 +358,19 @@ const Home = (): ReactElement => {
             <h2 id="conversation-list-title">Conversations</h2>
           </div>
 
-          <form
-            className={styles.newConversation}
-            onSubmit={handleCreateConversation}
-          >
-            <label
-              className={styles.newConversationLabel}
-              htmlFor="new-conversation-recipient"
-            >
-              Nouvelle conversation
+          <div className={styles.searchBox}>
+            <label className={styles.searchLabel} htmlFor="conversation-search">
+              Rechercher
             </label>
-            <div className={styles.newConversationControls}>
-              <select
-                className={styles.select}
-                disabled={
-                  userState === 'loading' ||
-                  isCreatingConversation ||
-                  availableRecipients.length === 0
-                }
-                id="new-conversation-recipient"
-                onChange={(event) =>
-                  setNewConversationRecipientId(event.target.value)
-                }
-                value={newConversationRecipientId}
-              >
-                {availableRecipients.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.nickname}
-                  </option>
-                ))}
-              </select>
-              <button
-                className={styles.secondaryButton}
-                disabled={
-                  userState !== 'success' ||
-                  availableRecipients.length === 0 ||
-                  isCreatingConversation
-                }
-                type="submit"
-              >
-                {isCreatingConversation ? 'Creation...' : 'Creer'}
-              </button>
-            </div>
-            {userState === 'loading' && (
-              <p className={styles.formHint} role="status">
-                Chargement des contacts...
-              </p>
-            )}
-            {userState === 'error' && (
-              <p className={styles.formError} role="alert">
-                Impossible de charger les contacts.
-                <button
-                  className={styles.inlineButton}
-                  type="button"
-                  onClick={loadUsers}
-                >
-                  Reessayer
-                </button>
-              </p>
-            )}
-            {userState === 'success' && availableRecipients.length === 0 && (
-              <p className={styles.formHint}>Aucun contact disponible.</p>
-            )}
-            {createConversationError !== null && (
-              <p className={styles.formError} role="alert">
-                {createConversationError}
-              </p>
-            )}
-          </form>
+            <input
+              className={styles.textInput}
+              id="conversation-search"
+              onChange={(event) => setConversationSearch(event.target.value)}
+              placeholder="Nom du contact"
+              type="search"
+              value={conversationSearch}
+            />
+          </div>
 
           {conversationState === 'loading' && (
             <div className={styles.status} role="status">
@@ -417,12 +398,20 @@ const Home = (): ReactElement => {
               </div>
             )}
 
-          {orderedConversations.length > 0 && (
+          {conversationState === 'success' &&
+            orderedConversations.length > 0 &&
+            filteredConversations.length === 0 && (
+              <div className={styles.emptyState}>
+                Aucune conversation ne correspond a cette recherche.
+              </div>
+            )}
+
+          {filteredConversations.length > 0 && (
             <ul
               className={styles.conversationList}
               aria-label="Liste des conversations"
             >
-              {orderedConversations.map((conversation) => {
+              {filteredConversations.map((conversation) => {
                 const participant = getConversationParticipant(
                   conversation,
                   loggedUserId
@@ -454,6 +443,104 @@ const Home = (): ReactElement => {
               })}
             </ul>
           )}
+
+          <form
+            className={styles.newConversation}
+            onSubmit={handleCreateConversation}
+          >
+            {shouldShowRecipientSuggestions && (
+              <div
+                className={styles.recipientSuggestions}
+                aria-label="Contacts suggeres"
+              >
+                {matchingRecipients.map((user) => (
+                  <button
+                    className={styles.recipientSuggestion}
+                    key={user.id}
+                    type="button"
+                    onClick={() =>
+                      setNewConversationRecipientQuery(user.nickname)
+                    }
+                  >
+                    {user.nickname}
+                  </button>
+                ))}
+              </div>
+            )}
+            <label
+              className={styles.newConversationLabel}
+              htmlFor="new-conversation-recipient"
+            >
+              Nouvelle conversation
+            </label>
+            <div className={styles.newConversationControls}>
+              <input
+                aria-describedby="new-conversation-help"
+                className={styles.textInput}
+                disabled={
+                  userState === 'loading' ||
+                  isCreatingConversation ||
+                  availableRecipients.length === 0
+                }
+                id="new-conversation-recipient"
+                onChange={(event) =>
+                  setNewConversationRecipientQuery(event.target.value)
+                }
+                placeholder="Tapez un nom"
+                value={newConversationRecipientQuery}
+              />
+              <button
+                className={styles.secondaryButton}
+                disabled={
+                  userState !== 'success' ||
+                  selectedRecipient === null ||
+                  isCreatingConversation
+                }
+                type="submit"
+              >
+                {isCreatingConversation ? 'Creation...' : 'Creer'}
+              </button>
+            </div>
+            {userState === 'loading' && (
+              <p className={styles.formHint} role="status">
+                Chargement des contacts...
+              </p>
+            )}
+            {userState === 'error' && (
+              <p className={styles.formError} role="alert">
+                Impossible de charger les contacts.
+                <button
+                  className={styles.inlineButton}
+                  type="button"
+                  onClick={loadUsers}
+                >
+                  Reessayer
+                </button>
+              </p>
+            )}
+            {userState === 'success' && availableRecipients.length === 0 && (
+              <p className={styles.formHint}>Aucun contact disponible.</p>
+            )}
+            {userState === 'success' &&
+              newConversationRecipientQuery.trim().length > 0 &&
+              matchingRecipients.length === 0 && (
+                <p className={styles.formHint} id="new-conversation-help">
+                  Aucun contact trouve.
+                </p>
+              )}
+            {userState === 'success' &&
+              (newConversationRecipientQuery.trim().length === 0 ||
+                matchingRecipients.length > 0) && (
+                <p className={styles.formHint} id="new-conversation-help">
+                  Tapez le nom d’un contact pour le retrouver.
+                </p>
+              )}
+            {createConversationError !== null && (
+              <p className={styles.formError} role="alert">
+                {createConversationError}
+              </p>
+            )}
+          </form>
         </section>
 
         <section

@@ -149,6 +149,25 @@ describe('App', () => {
     expect(await screen.findByText('Bonjour Jeremie')).toBeInTheDocument()
   })
 
+  it('filters conversations by typed contact name', async () => {
+    setupFetchMock()
+
+    render(<App />)
+
+    expect(
+      await screen.findByRole('button', { name: /Elodie/i })
+    ).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Rechercher'), {
+      target: { value: 'jer' },
+    })
+
+    expect(screen.getByRole('button', { name: /Jeremie/i })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /Elodie/i })
+    ).not.toBeInTheDocument()
+  })
+
   it('sends a valid message after the API confirms creation', async () => {
     const fetchMock = setupFetchMock()
 
@@ -177,19 +196,18 @@ describe('App', () => {
 
     render(<App />)
 
-    const recipientSelect = await screen.findByLabelText(
+    const recipientInput = await screen.findByLabelText(
       'Nouvelle conversation'
     )
-    await screen.findByRole('option', { name: 'Patrick' })
 
-    fireEvent.change(recipientSelect, { target: { value: '3' } })
+    fireEvent.change(recipientInput, { target: { value: 'Patrick' } })
     fireEvent.click(screen.getByRole('button', { name: 'Creer' }))
 
     expect(
       await screen.findByRole('heading', { name: 'Patrick' })
     ).toBeInTheDocument()
     expect(
-      screen.getByText('Aucun message dans cette conversation.')
+      await screen.findByText('Aucun message dans cette conversation.')
     ).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:3005/conversations/1',
@@ -198,6 +216,22 @@ describe('App', () => {
         body: expect.stringContaining('"recipientId":3'),
       })
     )
+  })
+
+  it('shows contact suggestions while typing a new conversation recipient', async () => {
+    setupFetchMock()
+
+    render(<App />)
+
+    const recipientInput = await screen.findByLabelText(
+      'Nouvelle conversation'
+    )
+
+    fireEvent.change(recipientInput, { target: { value: 'Pat' } })
+
+    expect(
+      await screen.findByRole('button', { name: 'Patrick' })
+    ).toBeInTheDocument()
   })
 
   it('does not send an empty message', async () => {

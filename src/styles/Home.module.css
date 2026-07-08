@@ -94,9 +94,26 @@
   list-style: none;
 }
 
-.newConversation {
+.searchBox {
   border-bottom: 1px solid #ece7e1;
   padding: 0.85rem 1rem;
+}
+
+.searchLabel {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: #667085;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.newConversation {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  border-top: 1px solid #ece7e1;
+  padding: 0.85rem 1rem;
+  background: #ffffff;
 }
 
 .newConversationLabel {
@@ -112,7 +129,7 @@
   gap: 0.5rem;
 }
 
-.select {
+.textInput {
   width: 100%;
   min-width: 0;
   border: 1px solid #cfc7bf;
@@ -123,9 +140,46 @@
   font: inherit;
 }
 
-.select:focus {
+.textInput:focus {
   border-color: #ec6e24;
   outline: 3px solid #f8d5c0;
+}
+
+.recipientSuggestions {
+  position: absolute;
+  right: 1rem;
+  bottom: calc(100% + 0.5rem);
+  left: 1rem;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  max-height: 130px;
+  overflow-y: auto;
+  border: 1px solid #ded8d0;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0.45rem;
+  box-shadow: 0 12px 24px rgb(31 41 51 / 16%);
+}
+
+.recipientSuggestion {
+  border: 1px solid #d7d2ca;
+  border-radius: 999px;
+  background: #ffffff;
+  padding: 0.35rem 0.6rem;
+  color: #1f2933;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.recipientSuggestion:hover,
+.recipientSuggestion:focus-visible {
+  border-color: #ec6e24;
+  background: #fff5ef;
+  outline: none;
 }
 
 .formHint,
