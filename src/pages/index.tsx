@@ -21,9 +21,13 @@ import {
 import styles from '../styles/Home.module.css'
 
 const MAX_MESSAGE_LENGTH = 1000
+const REFRESH_INTERVAL_MS = 15000
 const loggedUserId = getLoggedUserId()
 
 type LoadState = 'idle' | 'loading' | 'success' | 'error'
+type LoadOptions = {
+  silent?: boolean
+}
 
 const Home = (): ReactElement => {
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -76,8 +80,10 @@ const Home = (): ReactElement => {
     selectedConversation !== null &&
     messageState === 'success'
 
-  const loadConversations = useCallback(async () => {
-    setConversationState('loading')
+  const loadConversations = useCallback(async (options?: LoadOptions) => {
+    if (!options?.silent) {
+      setConversationState('loading')
+    }
 
     try {
       const result = sortConversations(await getConversations(loggedUserId))
@@ -124,21 +130,36 @@ const Home = (): ReactElement => {
     }
   }, [])
 
-  const loadMessages = useCallback(async (conversationId: number) => {
-    setMessageState('loading')
-    setSendError(null)
+  const loadMessages = useCallback(
+    async (conversationId: number, options?: LoadOptions) => {
+      if (!options?.silent) {
+        setMessageState('loading')
+      }
+      setSendError(null)
 
-    try {
-      setMessages(sortMessages(await getMessages(conversationId)))
-      setMessageState('success')
-    } catch {
-      setMessages([])
-      setMessageState('error')
-    }
-  }, [])
+      try {
+        setMessages(sortMessages(await getMessages(conversationId)))
+        setMessageState('success')
+      } catch {
+        if (!options?.silent) {
+          setMessages([])
+        }
+        setMessageState('error')
+      }
+    },
+    []
+  )
 
   useEffect(() => {
     void loadConversations()
+  }, [loadConversations])
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      void loadConversations({ silent: true })
+    }, REFRESH_INTERVAL_MS)
+
+    return () => window.clearInterval(intervalId)
   }, [loadConversations])
 
   useEffect(() => {
@@ -153,6 +174,18 @@ const Home = (): ReactElement => {
     }
 
     void loadMessages(selectedConversationId)
+  }, [loadMessages, selectedConversationId])
+
+  useEffect(() => {
+    if (selectedConversationId === null) {
+      return undefined
+    }
+
+    const intervalId = window.setInterval(() => {
+      void loadMessages(selectedConversationId, { silent: true })
+    }, REFRESH_INTERVAL_MS)
+
+    return () => window.clearInterval(intervalId)
   }, [loadMessages, selectedConversationId])
 
   const handleSelectConversation = (conversationId: number): void => {
@@ -287,13 +320,6 @@ const Home = (): ReactElement => {
         >
           <div className={styles.panelHeader}>
             <h2 id="conversation-list-title">Conversations</h2>
-            <button
-              className={styles.secondaryButton}
-              type="button"
-              onClick={loadConversations}
-            >
-              Actualiser
-            </button>
           </div>
 
           <form
@@ -377,7 +403,7 @@ const Home = (): ReactElement => {
               <button
                 className={styles.inlineButton}
                 type="button"
-                onClick={loadConversations}
+                onClick={() => loadConversations()}
               >
                 Reessayer
               </button>
