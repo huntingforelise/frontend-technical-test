@@ -416,12 +416,19 @@
   padding: 0.5rem 0.75rem;
 }
 
-.secondaryButton:hover,
-.secondaryButton:focus-visible,
+.secondaryButton:hover:not(:disabled),
+.secondaryButton:focus-visible:not(:disabled),
 .backButton:hover,
 .backButton:focus-visible {
   border-color: #ec6e24;
   outline: none;
+}
+
+.secondaryButton:disabled {
+  border-color: #d7d2ca;
+  background: #f1eee9;
+  color: #8a94a3;
+  cursor: not-allowed;
 }
 
 .inlineButton {

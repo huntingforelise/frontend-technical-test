@@ -123,6 +123,11 @@ const Home = (): ReactElement => {
     newConversationRecipientQuery.trim().length > 0 &&
     matchingRecipients.length > 0 &&
     !hasExactRecipientMatch
+  const canCreateConversation =
+    userState === 'success' &&
+    selectedRecipient !== null &&
+    matchingRecipients.length > 0 &&
+    !isCreatingConversation
   const loggedUser = users.find((user) => user.id === loggedUserId) ?? {
     id: loggedUserId,
     nickname: 'Thibaut',
@@ -510,11 +515,7 @@ const Home = (): ReactElement => {
               />
               <button
                 className={styles.secondaryButton}
-                disabled={
-                  userState !== 'success' ||
-                  selectedRecipient === null ||
-                  isCreatingConversation
-                }
+                disabled={!canCreateConversation}
                 type="submit"
               >
                 {isCreatingConversation ? 'Creation...' : 'Creer'}

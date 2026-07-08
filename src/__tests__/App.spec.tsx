@@ -268,6 +268,21 @@ describe('App', () => {
     ).toBeInTheDocument()
   })
 
+  it('disables conversation creation when no contact matches', async () => {
+    setupFetchMock()
+
+    render(<App />)
+
+    const recipientInput = await screen.findByLabelText(
+      'Nouvelle conversation'
+    )
+
+    fireEvent.change(recipientInput, { target: { value: 'Inconnu' } })
+
+    expect(await screen.findByText('Aucun contact trouve.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Creer' })).toBeDisabled()
+  })
+
   it('does not send an empty message', async () => {
     const fetchMock = setupFetchMock()
 
