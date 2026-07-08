@@ -82,12 +82,18 @@
 
 .threadIdentity {
   display: flex;
+  flex: 1;
   align-items: center;
   gap: 0.75rem;
   min-width: 0;
 }
 
+.threadIdentity .avatar {
+  flex: 0 0 44px;
+}
+
 .threadIdentity h2 {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -494,6 +500,17 @@
     display: flex;
   }
 
+  .selectedConversation {
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .selectedConversation:hover,
+  .selectedConversation:focus-visible {
+    border-color: #f1b28c;
+    background: #fff5ef;
+  }
+
   .backButton {
     align-items: center;
     justify-content: center;
@@ -505,7 +522,12 @@
   }
 
   .currentUser {
-    display: none;
+    display: inline-flex;
+    align-items: center;
+    max-width: 38%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .messageBubble {
