@@ -558,9 +558,24 @@ const Home = (): ReactElement => {
                 <button
                   className={styles.backButton}
                   type="button"
+                  aria-label="Retour aux conversations"
                   onClick={() => setIsThreadVisibleOnMobile(false)}
                 >
-                  Retour
+                  <svg
+                    aria-hidden="true"
+                    focusable="false"
+                    viewBox="0 0 24 24"
+                    className={styles.backIcon}
+                  >
+                    <path
+                      d="M15 18L9 12L15 6"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                    />
+                  </svg>
                 </button>
                 <div>
                   <p className={styles.threadLabel}>Conversation avec</p>
