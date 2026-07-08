@@ -40,6 +40,29 @@ const conversationThreeMessages = [
   },
 ]
 
+const users = [
+  {
+    id: 1,
+    nickname: 'Thibaut',
+    token: 'xxxx',
+  },
+  {
+    id: 2,
+    nickname: 'Jeremie',
+    token: 'xxxx',
+  },
+  {
+    id: 3,
+    nickname: 'Patrick',
+    token: 'xxxx',
+  },
+  {
+    id: 4,
+    nickname: 'Elodie',
+    token: 'xxxx',
+  },
+]
+
 const mockJson = (data: unknown, ok = true): Promise<Response> => {
   return Promise.resolve({
     ok,
@@ -53,7 +76,15 @@ const setupFetchMock = (): jest.Mock => {
     const url = String(input)
 
     if (url.endsWith('/conversations/1')) {
+      if (init?.method === 'POST') {
+        return mockJson({ id: 9 })
+      }
+
       return mockJson(conversations)
+    }
+
+    if (url.endsWith('/users')) {
+      return mockJson(users)
     }
 
     if (url.endsWith('/messages/3') && init?.method !== 'POST') {
@@ -62,6 +93,10 @@ const setupFetchMock = (): jest.Mock => {
 
     if (url.endsWith('/messages/1') && init?.method !== 'POST') {
       return mockJson(conversationOneMessages)
+    }
+
+    if (url.endsWith('/messages/9') && init?.method !== 'POST') {
+      return mockJson([])
     }
 
     if (url.endsWith('/messages/3') && init?.method === 'POST') {
@@ -85,9 +120,9 @@ describe('App', () => {
 
     render(<App />)
 
-    expect(screen.getByRole('status', { name: '' })).toHaveTextContent(
-      'Chargement des conversations'
-    )
+    expect(
+      screen.getByText('Chargement des conversations...')
+    ).toBeInTheDocument()
     expect(
       await screen.findByRole('button', { name: /Elodie/i })
     ).toBeInTheDocument()
@@ -137,6 +172,34 @@ describe('App', () => {
     )
   })
 
+  it('creates a new conversation and selects it', async () => {
+    const fetchMock = setupFetchMock()
+
+    render(<App />)
+
+    const recipientSelect = await screen.findByLabelText(
+      'Nouvelle conversation'
+    )
+    await screen.findByRole('option', { name: 'Patrick' })
+
+    fireEvent.change(recipientSelect, { target: { value: '3' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Creer' }))
+
+    expect(
+      await screen.findByRole('heading', { name: 'Patrick' })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Aucun message dans cette conversation.')
+    ).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3005/conversations/1',
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('"recipientId":3'),
+      })
+    )
+  })
+
   it('does not send an empty message', async () => {
     const fetchMock = setupFetchMock()
 
@@ -157,12 +220,10 @@ describe('App', () => {
 
     render(<App />)
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Impossible de charger les conversations'
-    )
     expect(
-      screen.getByRole('button', { name: 'Reessayer' })
+      await screen.findByText('Impossible de charger les conversations.')
     ).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Reessayer' })).toHaveLength(2)
   })
 
   it('keeps the draft when sending fails', async () => {
@@ -171,6 +232,10 @@ describe('App', () => {
 
       if (url.endsWith('/conversations/1')) {
         return mockJson(conversations)
+      }
+
+      if (url.endsWith('/users')) {
+        return mockJson(users)
       }
 
       if (url.endsWith('/messages/3') && init?.method !== 'POST') {

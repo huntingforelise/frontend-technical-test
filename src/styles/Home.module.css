@@ -94,6 +94,55 @@
   list-style: none;
 }
 
+.newConversation {
+  border-bottom: 1px solid #ece7e1;
+  padding: 0.85rem 1rem;
+}
+
+.newConversationLabel {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.newConversationControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+}
+
+.select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #cfc7bf;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0.5rem;
+  color: inherit;
+  font: inherit;
+}
+
+.select:focus {
+  border-color: #ec6e24;
+  outline: 3px solid #f8d5c0;
+}
+
+.formHint,
+.formError {
+  margin: 0.55rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.formHint {
+  color: #667085;
+}
+
+.formError {
+  color: #b42318;
+}
+
 .conversationButton {
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr);

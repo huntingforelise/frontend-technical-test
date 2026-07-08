@@ -1,5 +1,6 @@
 import type { Conversation } from '../types/conversation'
 import type { Message } from '../types/message'
+import type { User } from '../types/user'
 
 const API_BASE_URL = 'http://localhost:3005'
 
@@ -27,8 +28,22 @@ export const getConversations = (userId: number): Promise<Conversation[]> => {
   return request<Conversation[]>(`/conversations/${userId}`)
 }
 
+export const createConversation = (
+  userId: number,
+  conversation: Omit<Conversation, 'id'>
+): Promise<CreatedResource> => {
+  return request<CreatedResource>(`/conversations/${userId}`, {
+    method: 'POST',
+    body: JSON.stringify(conversation),
+  })
+}
+
 export const getMessages = (conversationId: number): Promise<Message[]> => {
   return request<Message[]>(`/messages/${conversationId}`)
+}
+
+export const getUsers = (): Promise<User[]> => {
+  return request<User[]>('/users')
 }
 
 export const sendMessage = (

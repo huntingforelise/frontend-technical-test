@@ -3,10 +3,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Head from 'next/head'
 import type { Conversation } from '../types/conversation'
 import type { Message } from '../types/message'
+import type { User } from '../types/user'
 import { getLoggedUserId } from '../utils/getLoggedUserId'
 import {
+  createConversation,
   getConversations,
   getMessages,
+  getUsers,
   sendMessage,
 } from '../utils/messagingApi'
 import {
@@ -24,12 +27,20 @@ type LoadState = 'idle' | 'loading' | 'success' | 'error'
 
 const Home = (): ReactElement => {
   const [conversations, setConversations] = useState<Conversation[]>([])
+  const [users, setUsers] = useState<User[]>([])
   const [selectedConversationId, setSelectedConversationId] = useState<
     number | null
   >(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [conversationState, setConversationState] = useState<LoadState>('idle')
   const [messageState, setMessageState] = useState<LoadState>('idle')
+  const [userState, setUserState] = useState<LoadState>('idle')
+  const [newConversationRecipientId, setNewConversationRecipientId] =
+    useState('')
+  const [isCreatingConversation, setIsCreatingConversation] = useState(false)
+  const [createConversationError, setCreateConversationError] = useState<
+    string | null
+  >(null)
   const [draft, setDraft] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
@@ -47,6 +58,15 @@ const Home = (): ReactElement => {
     [orderedConversations, selectedConversationId]
   )
   const orderedMessages = useMemo(() => sortMessages(messages), [messages])
+  const availableRecipients = useMemo(
+    () => users.filter((user) => user.id !== loggedUserId),
+    [users]
+  )
+  const loggedUser = users.find((user) => user.id === loggedUserId) ?? {
+    id: loggedUserId,
+    nickname: 'Thibaut',
+    token: '',
+  }
   const trimmedDraft = draft.trim()
   const isDraftTooLong = draft.length > MAX_MESSAGE_LENGTH
   const canSend =
@@ -79,6 +99,31 @@ const Home = (): ReactElement => {
     }
   }, [])
 
+  const loadUsers = useCallback(async () => {
+    setUserState('loading')
+
+    try {
+      const result = await getUsers()
+
+      setUsers(result)
+      setUserState('success')
+      setNewConversationRecipientId((currentRecipientId) => {
+        if (
+          currentRecipientId !== '' &&
+          result.some((user) => String(user.id) === currentRecipientId)
+        ) {
+          return currentRecipientId
+        }
+
+        return (
+          result.find((user) => user.id !== loggedUserId)?.id.toString() ?? ''
+        )
+      })
+    } catch {
+      setUserState('error')
+    }
+  }, [])
+
   const loadMessages = useCallback(async (conversationId: number) => {
     setMessageState('loading')
     setSendError(null)
@@ -97,6 +142,10 @@ const Home = (): ReactElement => {
   }, [loadConversations])
 
   useEffect(() => {
+    void loadUsers()
+  }, [loadUsers])
+
+  useEffect(() => {
     if (selectedConversationId === null) {
       setMessages([])
       setMessageState('idle')
@@ -109,6 +158,57 @@ const Home = (): ReactElement => {
   const handleSelectConversation = (conversationId: number): void => {
     setSelectedConversationId(conversationId)
     setIsThreadVisibleOnMobile(true)
+  }
+
+  const handleCreateConversation = async (
+    event: FormEvent<HTMLFormElement>
+  ): Promise<void> => {
+    event.preventDefault()
+
+    const recipientId = Number(newConversationRecipientId)
+    const recipient = users.find((user) => user.id === recipientId)
+
+    if (recipient === undefined || isCreatingConversation) {
+      return
+    }
+
+    const lastMessageTimestamp = Math.floor(Date.now() / 1000)
+    const nextConversation = {
+      recipientId: recipient.id,
+      recipientNickname: recipient.nickname,
+      senderId: loggedUser.id,
+      senderNickname: loggedUser.nickname,
+      lastMessageTimestamp,
+    }
+
+    setIsCreatingConversation(true)
+    setCreateConversationError(null)
+
+    try {
+      const createdConversation = await createConversation(
+        loggedUserId,
+        nextConversation
+      )
+      const conversation = {
+        id: createdConversation.id,
+        ...nextConversation,
+      }
+
+      setConversations((currentConversations) =>
+        sortConversations([conversation, ...currentConversations])
+      )
+      setSelectedConversationId(createdConversation.id)
+      setMessages([])
+      setMessageState('success')
+      setDraft('')
+      setIsThreadVisibleOnMobile(true)
+    } catch {
+      setCreateConversationError(
+        'La conversation n’a pas pu etre creee. Vous pouvez reessayer.'
+      )
+    } finally {
+      setIsCreatingConversation(false)
+    }
   }
 
   const handleSendMessage = async (
@@ -195,6 +295,75 @@ const Home = (): ReactElement => {
               Actualiser
             </button>
           </div>
+
+          <form
+            className={styles.newConversation}
+            onSubmit={handleCreateConversation}
+          >
+            <label
+              className={styles.newConversationLabel}
+              htmlFor="new-conversation-recipient"
+            >
+              Nouvelle conversation
+            </label>
+            <div className={styles.newConversationControls}>
+              <select
+                className={styles.select}
+                disabled={
+                  userState === 'loading' ||
+                  isCreatingConversation ||
+                  availableRecipients.length === 0
+                }
+                id="new-conversation-recipient"
+                onChange={(event) =>
+                  setNewConversationRecipientId(event.target.value)
+                }
+                value={newConversationRecipientId}
+              >
+                {availableRecipients.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.nickname}
+                  </option>
+                ))}
+              </select>
+              <button
+                className={styles.secondaryButton}
+                disabled={
+                  userState !== 'success' ||
+                  availableRecipients.length === 0 ||
+                  isCreatingConversation
+                }
+                type="submit"
+              >
+                {isCreatingConversation ? 'Creation...' : 'Creer'}
+              </button>
+            </div>
+            {userState === 'loading' && (
+              <p className={styles.formHint} role="status">
+                Chargement des contacts...
+              </p>
+            )}
+            {userState === 'error' && (
+              <p className={styles.formError} role="alert">
+                Impossible de charger les contacts.
+                <button
+                  className={styles.inlineButton}
+                  type="button"
+                  onClick={loadUsers}
+                >
+                  Reessayer
+                </button>
+              </p>
+            )}
+            {userState === 'success' && availableRecipients.length === 0 && (
+              <p className={styles.formHint}>Aucun contact disponible.</p>
+            )}
+            {createConversationError !== null && (
+              <p className={styles.formError} role="alert">
+                {createConversationError}
+              </p>
+            )}
+          </form>
 
           {conversationState === 'loading' && (
             <div className={styles.status} role="status">

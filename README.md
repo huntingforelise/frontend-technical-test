@@ -82,6 +82,7 @@ The starter page was replaced with a responsive messaging interface for the requ
 - automatically open the newest conversation
 - display the selected conversation messages in chronological order
 - allow the logged-in user to send a new message
+- allow the logged-in user to create a new empty conversation
 - keep the interface usable on desktop and mobile
 
 The logged-in user still comes from `getLoggedUserId()` and defaults to user `1`.
@@ -100,6 +101,7 @@ The implementation stays close to the provided scaffold and avoids extra runtime
 The interface handles the shaky API and common input issues:
 
 - loading, empty, and retryable error states for conversations and messages
+- retryable contact loading and conversation creation failures
 - outgoing messages are trimmed before sending
 - empty messages cannot be submitted
 - messages are limited to 1,000 characters
@@ -127,8 +129,4 @@ npm test
 npm run build
 ```
 
-The app tests cover loading conversations, selecting a thread, sending a message, blocking empty messages, and graceful API failures.
-
-## Out of scope
-
-Bonus 1, creating new conversations, was intentionally left out for this pass.
+The app tests cover loading conversations, selecting a thread, creating a conversation, sending a message, blocking empty messages, and graceful API failures.
