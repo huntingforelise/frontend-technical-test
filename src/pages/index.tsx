@@ -1,65 +1,389 @@
-import type { ReactElement } from 'react'
+import type { FormEvent, ReactElement } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Head from 'next/head'
-import Image from 'next/image'
-import Logo from '../assets/lbc-logo.webp'
+import type { Conversation } from '../types/conversation'
+import type { Message } from '../types/message'
+import { getLoggedUserId } from '../utils/getLoggedUserId'
+import {
+  getConversations,
+  getMessages,
+  sendMessage,
+} from '../utils/messagingApi'
+import {
+  formatTimestamp,
+  getConversationParticipant,
+  sortConversations,
+  sortMessages,
+} from '../utils/messagingView'
 import styles from '../styles/Home.module.css'
 
-export default function Home(): ReactElement {
-  const year = new Date().getFullYear()
+const MAX_MESSAGE_LENGTH = 1000
+const loggedUserId = getLoggedUserId()
+
+type LoadState = 'idle' | 'loading' | 'success' | 'error'
+
+const Home = (): ReactElement => {
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [selectedConversationId, setSelectedConversationId] = useState<
+    number | null
+  >(null)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [conversationState, setConversationState] = useState<LoadState>('idle')
+  const [messageState, setMessageState] = useState<LoadState>('idle')
+  const [draft, setDraft] = useState('')
+  const [isSending, setIsSending] = useState(false)
+  const [sendError, setSendError] = useState<string | null>(null)
+  const [isThreadVisibleOnMobile, setIsThreadVisibleOnMobile] = useState(false)
+
+  const orderedConversations = useMemo(
+    () => sortConversations(conversations),
+    [conversations]
+  )
+  const selectedConversation = useMemo(
+    () =>
+      orderedConversations.find(
+        (conversation) => conversation.id === selectedConversationId
+      ) ?? null,
+    [orderedConversations, selectedConversationId]
+  )
+  const orderedMessages = useMemo(() => sortMessages(messages), [messages])
+  const trimmedDraft = draft.trim()
+  const isDraftTooLong = draft.length > MAX_MESSAGE_LENGTH
+  const canSend =
+    trimmedDraft.length > 0 &&
+    !isDraftTooLong &&
+    !isSending &&
+    selectedConversation !== null &&
+    messageState === 'success'
+
+  const loadConversations = useCallback(async () => {
+    setConversationState('loading')
+
+    try {
+      const result = sortConversations(await getConversations(loggedUserId))
+
+      setConversations(result)
+      setConversationState('success')
+      setSelectedConversationId((currentId) => {
+        if (
+          currentId !== null &&
+          result.some((conversation) => conversation.id === currentId)
+        ) {
+          return currentId
+        }
+
+        return result[0]?.id ?? null
+      })
+    } catch {
+      setConversationState('error')
+    }
+  }, [])
+
+  const loadMessages = useCallback(async (conversationId: number) => {
+    setMessageState('loading')
+    setSendError(null)
+
+    try {
+      setMessages(sortMessages(await getMessages(conversationId)))
+      setMessageState('success')
+    } catch {
+      setMessages([])
+      setMessageState('error')
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadConversations()
+  }, [loadConversations])
+
+  useEffect(() => {
+    if (selectedConversationId === null) {
+      setMessages([])
+      setMessageState('idle')
+      return
+    }
+
+    void loadMessages(selectedConversationId)
+  }, [loadMessages, selectedConversationId])
+
+  const handleSelectConversation = (conversationId: number): void => {
+    setSelectedConversationId(conversationId)
+    setIsThreadVisibleOnMobile(true)
+  }
+
+  const handleSendMessage = async (
+    event: FormEvent<HTMLFormElement>
+  ): Promise<void> => {
+    event.preventDefault()
+
+    if (!canSend || selectedConversation === null) {
+      return
+    }
+
+    const body = trimmedDraft
+    const timestamp = Math.floor(Date.now() / 1000)
+
+    setIsSending(true)
+    setSendError(null)
+
+    try {
+      const createdMessage = await sendMessage(
+        selectedConversation.id,
+        body,
+        timestamp
+      )
+      const nextMessage: Message = {
+        id: createdMessage.id,
+        conversationId: selectedConversation.id,
+        authorId: loggedUserId,
+        timestamp,
+        body,
+      }
+
+      setMessages((currentMessages) =>
+        sortMessages([...currentMessages, nextMessage])
+      )
+      setConversations((currentConversations) =>
+        currentConversations.map((conversation) =>
+          conversation.id === selectedConversation.id
+            ? { ...conversation, lastMessageTimestamp: timestamp }
+            : conversation
+        )
+      )
+      setDraft('')
+    } catch {
+      setSendError(
+        'Votre message n’a pas pu etre envoye. Vous pouvez reessayer.'
+      )
+    } finally {
+      setIsSending(false)
+    }
+  }
 
   return (
     <div className={styles.container}>
       <Head>
-        <title>Frontend Technical test - Leboncoin</title>
-        <meta name="description" content="Frontend exercise for developpers who want to join us on leboncoin.fr" />
+        <title>Messages - leboncoin</title>
+        <meta
+          name="description"
+          content="Consultez et envoyez vos messages leboncoin."
+        />
       </Head>
 
-      <main className={styles.main}>
-        <Image src={Logo} alt="Leboncoin Frontend Team" width={400} height={125} priority />
-        <h1 className={styles.title}>
-          Welcome !
-        </h1>
-
-        <p className={styles.description}>
-          This test is based on a <a title="Next.js documentation" href="https://nextjs.org/docs/getting-started" target="_blank" rel="noopener noreferrer">Next.js</a> application.<br />
-          Fork the repository and use the <code className={styles.code}>main</code> branch as your starting point.
-          <br /><br />
-
-          Get started by reading{' '}
-          <code className={styles.code}>README.md</code> and editing <code className={styles.code}>src/pages/index.js</code>
-          <br />
-          Once you are done, send the repository link to your HR contact.
-        </p>
-
-        <div className={styles.grid}>
-          <article className={styles.card}>
-            <h2>Design</h2>
-            <p>Feel free to create any design you want for this exercise. Let your creativity talks !</p>
-          </article>
-
-          <article className={styles.card}>
-            <h2>Libraries</h2>
-            <p>Feel free to use any library you want. Only Next.js / React are required.</p>
-          </article>
-
-          <article className={styles.card}>
-            <h2>API Server</h2>
-            <p>
-              Start the API server on port <code className={styles.code}>3005</code> by running<br /><code className={styles.code}>npm run start-server</code>.<br/>
-              Find the swagger definitions in <code className={styles.code}>docs/api-swagger.yml</code> or <a title="API Swagger documentation" href="https://leboncoin.tech/frontend-technical-test/" target="_blank" rel="noopener noreferrer">the online documentation</a>.
-            </p>
-          </article>
-
-          <article className={styles.card}>
-            <h2>Timing</h2>
-            <p>We recommend 4 hours for this test. You are free to spend more (or less) time, let us know how much time did you spend.</p>
-          </article>
+      <header className={styles.header}>
+        <div>
+          <p className={styles.eyebrow}>leboncoin</p>
+          <h1 className={styles.title}>Messages</h1>
         </div>
-      </main>
+        <div className={styles.currentUser} aria-label="Utilisateur connecte">
+          Thibaut
+        </div>
+      </header>
 
-      <footer className={styles.footer}>
-        &copy; leboncoin - {year}
-      </footer>
+      <main className={styles.shell}>
+        <section
+          className={`${styles.sidebar} ${isThreadVisibleOnMobile ? styles.sidebarHiddenMobile : ''}`}
+          aria-labelledby="conversation-list-title"
+        >
+          <div className={styles.panelHeader}>
+            <h2 id="conversation-list-title">Conversations</h2>
+            <button
+              className={styles.secondaryButton}
+              type="button"
+              onClick={loadConversations}
+            >
+              Actualiser
+            </button>
+          </div>
+
+          {conversationState === 'loading' && (
+            <div className={styles.status} role="status">
+              Chargement des conversations...
+            </div>
+          )}
+
+          {conversationState === 'error' && (
+            <div className={styles.errorBox} role="alert">
+              Impossible de charger les conversations.
+              <button
+                className={styles.inlineButton}
+                type="button"
+                onClick={loadConversations}
+              >
+                Reessayer
+              </button>
+            </div>
+          )}
+
+          {conversationState === 'success' &&
+            orderedConversations.length === 0 && (
+              <div className={styles.emptyState}>
+                Aucune conversation pour le moment.
+              </div>
+            )}
+
+          {orderedConversations.length > 0 && (
+            <ul
+              className={styles.conversationList}
+              aria-label="Liste des conversations"
+            >
+              {orderedConversations.map((conversation) => {
+                const participant = getConversationParticipant(
+                  conversation,
+                  loggedUserId
+                )
+                const isSelected = conversation.id === selectedConversationId
+
+                return (
+                  <li key={conversation.id}>
+                    <button
+                      className={`${styles.conversationButton} ${isSelected ? styles.selectedConversation : ''}`}
+                      type="button"
+                      aria-current={isSelected ? 'true' : undefined}
+                      onClick={() => handleSelectConversation(conversation.id)}
+                    >
+                      <span className={styles.avatar} aria-hidden="true">
+                        {participant.nickname.charAt(0).toUpperCase()}
+                      </span>
+                      <span className={styles.conversationMeta}>
+                        <span className={styles.conversationName}>
+                          {participant.nickname}
+                        </span>
+                        <span className={styles.conversationDate}>
+                          {formatTimestamp(conversation.lastMessageTimestamp)}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
+
+        <section
+          className={`${styles.thread} ${isThreadVisibleOnMobile ? styles.threadVisibleMobile : ''}`}
+          aria-labelledby="thread-title"
+        >
+          {selectedConversation === null ? (
+            <div className={styles.emptyThread}>
+              Selectionnez une conversation pour consulter les messages.
+            </div>
+          ) : (
+            <>
+              <div className={styles.threadHeader}>
+                <button
+                  className={styles.backButton}
+                  type="button"
+                  onClick={() => setIsThreadVisibleOnMobile(false)}
+                >
+                  Retour
+                </button>
+                <div>
+                  <p className={styles.threadLabel}>Conversation avec</p>
+                  <h2 id="thread-title">
+                    {
+                      getConversationParticipant(
+                        selectedConversation,
+                        loggedUserId
+                      ).nickname
+                    }
+                  </h2>
+                </div>
+              </div>
+
+              <div className={styles.messageList} aria-live="polite">
+                {messageState === 'loading' && (
+                  <div className={styles.status} role="status">
+                    Chargement des messages...
+                  </div>
+                )}
+
+                {messageState === 'error' && (
+                  <div className={styles.errorBox} role="alert">
+                    Impossible de charger les messages.
+                    <button
+                      className={styles.inlineButton}
+                      type="button"
+                      onClick={() => loadMessages(selectedConversation.id)}
+                    >
+                      Reessayer
+                    </button>
+                  </div>
+                )}
+
+                {messageState === 'success' && orderedMessages.length === 0 && (
+                  <div className={styles.emptyState}>
+                    Aucun message dans cette conversation.
+                  </div>
+                )}
+
+                {orderedMessages.map((message) => {
+                  const isOwnMessage = message.authorId === loggedUserId
+
+                  return (
+                    <article
+                      className={`${styles.messageRow} ${isOwnMessage ? styles.ownMessageRow : ''}`}
+                      key={message.id}
+                    >
+                      <div
+                        className={`${styles.messageBubble} ${isOwnMessage ? styles.ownMessage : ''}`}
+                      >
+                        <p>{message.body}</p>
+                        <time
+                          dateTime={new Date(
+                            message.timestamp * 1000
+                          ).toISOString()}
+                        >
+                          {formatTimestamp(message.timestamp)}
+                        </time>
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+
+              <form className={styles.composer} onSubmit={handleSendMessage}>
+                <label className={styles.composerLabel} htmlFor="message-body">
+                  Nouveau message
+                </label>
+                <textarea
+                  id="message-body"
+                  aria-describedby="message-help"
+                  className={styles.textarea}
+                  maxLength={MAX_MESSAGE_LENGTH + 1}
+                  onChange={(event) => setDraft(event.target.value)}
+                  placeholder="Ecrivez votre message"
+                  value={draft}
+                  disabled={isSending || messageState === 'loading'}
+                />
+                <div className={styles.composerFooter}>
+                  <p
+                    className={`${styles.helpText} ${isDraftTooLong ? styles.helpTextError : ''}`}
+                    id="message-help"
+                  >
+                    {draft.length}/{MAX_MESSAGE_LENGTH}
+                  </p>
+                  <button
+                    className={styles.primaryButton}
+                    type="submit"
+                    disabled={!canSend}
+                  >
+                    {isSending ? 'Envoi...' : 'Envoyer'}
+                  </button>
+                </div>
+                {sendError !== null && (
+                  <p className={styles.sendError} role="alert">
+                    {sendError}
+                  </p>
+                )}
+              </form>
+            </>
+          )}
+        </section>
+      </main>
     </div>
   )
 }
+
+export default Home
