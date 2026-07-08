@@ -76,10 +76,21 @@
   font-size: 1.1rem;
 }
 
-.threadLabel {
-  margin: 0 0 0.2rem;
-  color: #667085;
-  font-size: 0.85rem;
+.threadHeader {
+  justify-content: flex-start;
+}
+
+.threadIdentity {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.threadIdentity h2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .conversationList {

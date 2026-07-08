@@ -75,6 +75,9 @@ const Home = (): ReactElement => {
       ) ?? null,
     [orderedConversations, selectedConversationId]
   )
+  const selectedParticipant = selectedConversation
+    ? getConversationParticipant(selectedConversation, loggedUserId)
+    : null
   const orderedMessages = useMemo(() => sortMessages(messages), [messages])
   const availableRecipients = useMemo(
     () => users.filter((user) => user.id !== loggedUserId),
@@ -101,8 +104,7 @@ const Home = (): ReactElement => {
     return (
       availableRecipients.find(
         (user) => user.nickname.toLowerCase() === normalizedQuery
-      ) ??
-      (matchingRecipients.length === 1 ? matchingRecipients[0] : null)
+      ) ?? (matchingRecipients.length === 1 ? matchingRecipients[0] : null)
     )
   }, [availableRecipients, matchingRecipients, newConversationRecipientQuery])
   const hasExactRecipientMatch =
@@ -577,16 +579,11 @@ const Home = (): ReactElement => {
                     />
                   </svg>
                 </button>
-                <div>
-                  <p className={styles.threadLabel}>Conversation avec</p>
-                  <h2 id="thread-title">
-                    {
-                      getConversationParticipant(
-                        selectedConversation,
-                        loggedUserId
-                      ).nickname
-                    }
-                  </h2>
+                <div className={styles.threadIdentity}>
+                  <span className={styles.avatar} aria-hidden="true">
+                    {selectedParticipant?.nickname.charAt(0).toUpperCase()}
+                  </span>
+                  <h2 id="thread-title">{selectedParticipant?.nickname}</h2>
                 </div>
               </div>
 
