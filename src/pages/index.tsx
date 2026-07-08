@@ -461,6 +461,10 @@ const Home = (): ReactElement => {
                           {formatTimestamp(conversation.lastMessageTimestamp)}
                         </span>
                       </span>
+                      <span
+                        className={styles.conversationChevron}
+                        aria-hidden="true"
+                      />
                     </button>
                   </li>
                 )
