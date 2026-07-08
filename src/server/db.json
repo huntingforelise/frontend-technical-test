@@ -23,38 +23,6 @@
       "senderId": 4,
       "senderNickname": "Elodie",
       "lastMessageTimestamp": 1625648667
-    },
-    {
-      "recipientId": 4,
-      "recipientNickname": "Elodie",
-      "senderId": 1,
-      "senderNickname": "Thibaut",
-      "lastMessageTimestamp": 1783513033,
-      "id": 4
-    },
-    {
-      "recipientId": 3,
-      "recipientNickname": "Patrick",
-      "senderId": 1,
-      "senderNickname": "Thibaut",
-      "lastMessageTimestamp": 1783515180,
-      "id": 5
-    },
-    {
-      "recipientId": 3,
-      "recipientNickname": "Patrick",
-      "senderId": 1,
-      "senderNickname": "Thibaut",
-      "lastMessageTimestamp": 1783515997,
-      "id": 6
-    },
-    {
-      "recipientId": 3,
-      "recipientNickname": "Patrick",
-      "senderId": 1,
-      "senderNickname": "Thibaut",
-      "lastMessageTimestamp": 1783516004,
-      "id": 7
     }
   ],
   "messages": [
@@ -85,27 +53,6 @@
       "timestamp": 1620284667,
       "authorId": 2,
       "body": "Bonjour c'est le premier message de la seconde conversation"
-    },
-    {
-      "body": "hello",
-      "conversationId": 2,
-      "authorId": 1,
-      "timestamp": 1783516022,
-      "id": 5
-    },
-    {
-      "authorId": 1,
-      "conversationId": 2,
-      "body": "try again",
-      "timestamp": 1783520413,
-      "id": 6
-    },
-    {
-      "authorId": 1,
-      "body": "blabla",
-      "conversationId": 2,
-      "timestamp": 1783520566,
-      "id": 7
     }
   ],
   "users": [
@@ -127,6 +74,16 @@
     {
       "id": 4,
       "nickname": "Elodie",
+      "token": "xxxx"
+    },
+    {
+      "id": 5,
+      "nickname": "Elise",
+      "token": "xxxx"
+    },
+    {
+      "id": 6,
+      "nickname": "Julien",
       "token": "xxxx"
     }
   ]
