@@ -575,10 +575,12 @@ const Home = (): ReactElement => {
                 className={styles.createConversationButton}
                 disabled={!canCreateConversation}
                 type="submit"
-                title={isCreatingConversation ? 'Création...' : 'Créer'}
+                title={
+                  isCreatingConversation ? 'Création en cours...' : 'Créer'
+                }
               >
                 <span className={styles.srOnly}>
-                  {isCreatingConversation ? 'Création...' : 'Créer'}
+                  {isCreatingConversation ? 'Création en cours...' : 'Créer'}
                 </span>
                 <svg
                   className={styles.createConversationIcon}
@@ -736,10 +738,10 @@ const Home = (): ReactElement => {
                     className={styles.primaryButton}
                     type="submit"
                     disabled={!canSend}
-                    title={isSending ? 'Envoi...' : 'Envoyer'}
+                    title={isSending ? 'Envoi en cours...' : 'Envoyer'}
                   >
                     <span className={styles.srOnly}>
-                      {isSending ? 'Envoi...' : 'Envoyer'}
+                      {isSending ? 'Envoi en cours...' : 'Envoyer'}
                     </span>
                     <svg
                       aria-hidden="true"
