@@ -130,7 +130,7 @@ const Home = (): ReactElement => {
     !isCreatingConversation
   const loggedUser = users.find((user) => user.id === loggedUserId) ?? {
     id: loggedUserId,
-    nickname: 'Thibaut',
+    nickname: `Utilisateur ${loggedUserId}`,
     token: '',
   }
   const trimmedDraft = draft.trim()
@@ -370,9 +370,9 @@ const Home = (): ReactElement => {
         </div>
         <div className={styles.currentUser} aria-label="Utilisateur connecte">
           <span className={styles.currentUserAvatar} aria-hidden="true">
-            T
+            {loggedUser.nickname.charAt(0).toUpperCase()}
           </span>
-          <span>Thibaut</span>
+          <span>{loggedUser.nickname}</span>
         </div>
       </header>
 
