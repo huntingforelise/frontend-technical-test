@@ -66,13 +66,13 @@ export const MessageComposer = ({
             />
           </svg>
         </button>
+        <p
+          className={`${styles.helpText} ${isDraftTooLong ? styles.helpTextError : ''}`}
+          id="message-help"
+        >
+          {draft.length}/{maxLength}
+        </p>
       </div>
-      <p
-        className={`${styles.helpText} ${isDraftTooLong ? styles.helpTextError : ''}`}
-        id="message-help"
-      >
-        {draft.length}/{maxLength}
-      </p>
       {sendError !== null && (
         <p className={styles.sendError} role="alert">
           {sendError}
