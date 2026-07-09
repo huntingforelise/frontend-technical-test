@@ -112,11 +112,11 @@ const Home = (): ReactElement => {
     selectedRecipient.nickname.toLowerCase() ===
       newConversationRecipientQuery.trim().toLowerCase()
   const existingConversationForSelectedRecipient = selectedRecipient
-    ? orderedConversations.find(
+    ? (orderedConversations.find(
         (conversation) =>
           getConversationParticipant(conversation, loggedUserId).id ===
           selectedRecipient.id
-      ) ?? null
+      ) ?? null)
     : null
   const shouldShowRecipientSuggestions =
     userState === 'success' &&
@@ -386,17 +386,27 @@ const Home = (): ReactElement => {
           </div>
 
           <div className={styles.searchBox}>
-            <label className={styles.searchLabel} htmlFor="conversation-search">
+            <label className={styles.srOnly} htmlFor="conversation-search">
               Rechercher
             </label>
-            <input
-              className={styles.textInput}
-              id="conversation-search"
-              onChange={(event) => setConversationSearch(event.target.value)}
-              placeholder="Nom du contact"
-              type="search"
-              value={conversationSearch}
-            />
+            <div className={styles.searchField}>
+              <svg
+                className={styles.searchIcon}
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+              >
+                <path d="m21 21-4.35-4.35" />
+                <circle cx="11" cy="11" r="7" />
+              </svg>
+              <input
+                className={styles.searchInput}
+                id="conversation-search"
+                onChange={(event) => setConversationSearch(event.target.value)}
+                placeholder="Rechercher nom du contact"
+                type="search"
+                value={conversationSearch}
+              />
+            </div>
           </div>
 
           {conversationState === 'loading' && (
