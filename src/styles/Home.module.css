@@ -5,13 +5,8 @@
   --color-muted: #667085;
   --color-border: #ded8d0;
   --color-accent: #ec6e24;
-  --color-accent-hover: #c85c1e;
   --color-accent-soft: #fff5ef;
-  --color-focus: #f8d5c0;
   --color-danger: #b42318;
-  --color-danger-border: #fecdca;
-  --color-danger-bg: #fffbfa;
-  --color-avatar: #23424f;
   --radius-control: 8px;
   --radius-pill: 999px;
   --text-sm: 0.85rem;
@@ -46,11 +41,28 @@
 }
 
 .currentUser {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
   background: var(--color-surface);
-  padding: 0.45rem 0.8rem;
+  padding: 0.5rem 0.75rem 0.5rem 0.5rem;
   font-weight: 700;
+}
+
+.currentUserAvatar {
+  display: inline-flex;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-text);
+  color: var(--color-surface);
+  font-size: var(--text-sm);
+  font-weight: var(--font-strong);
 }
 
 .shell {
@@ -135,12 +147,12 @@
 
 .searchBox {
   border-bottom: 1px solid var(--color-border);
-  padding: 0.85rem 1rem;
+  padding: 1rem;
 }
 
 .searchLabel {
   display: block;
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.5rem;
   color: var(--color-muted);
   font-size: var(--text-sm);
   font-weight: var(--font-strong);
@@ -151,13 +163,13 @@
   z-index: 1;
   margin-top: auto;
   border-top: 1px solid var(--color-border);
-  padding: 0.85rem 1rem;
+  padding: 1rem;
   background: var(--color-surface);
 }
 
 .newConversationLabel {
   display: block;
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.5rem;
   font-size: var(--text-sm);
   font-weight: var(--font-strong);
 }
@@ -181,7 +193,7 @@
 
 .textInput:focus {
   border-color: var(--color-accent);
-  outline: 3px solid var(--color-focus);
+  outline: 3px solid var(--color-accent-soft);
 }
 
 .recipientSuggestions {
@@ -192,13 +204,13 @@
   z-index: 2;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.5rem;
   max-height: 130px;
   overflow-y: auto;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
   background: var(--color-surface);
-  padding: 0.45rem;
+  padding: 0.5rem;
   box-shadow: 0 12px 24px rgb(31 41 51 / 16%);
 }
 
@@ -206,7 +218,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
   background: var(--color-surface);
-  padding: 0.35rem 0.6rem;
+  padding: 0.5rem 0.75rem;
   color: var(--color-text);
   font: inherit;
   font-size: var(--text-sm);
@@ -223,7 +235,7 @@
 
 .formHint,
 .formError {
-  margin: 0.55rem 0 0;
+  margin: 0.5rem 0 0;
   font-size: var(--text-sm);
   line-height: 1.35;
 }
@@ -270,7 +282,7 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: var(--color-avatar);
+  background: var(--color-text);
   color: var(--color-surface);
   font-weight: var(--font-strong);
 }
@@ -321,6 +333,8 @@
 
 .messageRow {
   display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
   justify-content: flex-start;
 }
 
@@ -333,7 +347,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
   background: var(--color-surface);
-  padding: 0.75rem 0.85rem;
+  padding: 0.75rem;
   overflow-wrap: anywhere;
 }
 
@@ -344,7 +358,7 @@
 }
 
 .messageBubble p {
-  margin: 0 0 0.45rem;
+  margin: 0 0 0.5rem;
   line-height: 1.45;
 }
 
@@ -366,7 +380,7 @@
 
 .composerLabel {
   display: block;
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.5rem;
   font-weight: var(--font-strong);
 }
 
@@ -384,7 +398,7 @@
 
 .textarea:focus {
   border-color: var(--color-accent);
-  outline: 3px solid var(--color-focus);
+  outline: 3px solid var(--color-accent-soft);
 }
 
 .composerFooter {
@@ -425,12 +439,11 @@
   min-width: 108px;
   background: var(--color-accent);
   color: var(--color-surface);
-  padding: 0.7rem 1rem;
+  padding: 0.75rem 1rem;
 }
 
 .primaryButton:hover:not(:disabled),
 .primaryButton:focus-visible {
-  background: var(--color-accent-hover);
   outline: none;
 }
 
@@ -466,7 +479,7 @@
 .inlineButton {
   margin-left: 0.5rem;
   background: transparent;
-  color: var(--color-accent-hover);
+  color: var(--color-accent);
   padding: 0.15rem 0;
   text-decoration: underline;
 }
@@ -496,8 +509,8 @@
 }
 
 .errorBox {
-  border: 1px solid var(--color-danger-border);
-  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger);
+  background: var(--color-surface);
   color: var(--color-danger);
 }
 

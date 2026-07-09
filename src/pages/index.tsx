@@ -369,7 +369,10 @@ const Home = (): ReactElement => {
           <h1 className={styles.title}>Messages</h1>
         </div>
         <div className={styles.currentUser} aria-label="Utilisateur connecte">
-          Thibaut
+          <span className={styles.currentUserAvatar} aria-hidden="true">
+            T
+          </span>
+          <span>Thibaut</span>
         </div>
       </header>
 
