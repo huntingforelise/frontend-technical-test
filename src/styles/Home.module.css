@@ -5,6 +5,7 @@
   --color-muted: #667085;
   --color-border: #ded8d0;
   --color-accent: #ec6e24;
+  --color-focus-border: #ff6a00;
   --color-accent-soft: #fff5ef;
   --color-avatar: #184653;
   --color-danger: #b42318;
@@ -170,17 +171,20 @@
   grid-template-columns: 24px minmax(0, 1fr);
   align-items: center;
   gap: 0.75rem;
+  border: 1px solid transparent;
   border-radius: var(--radius-pill);
   background: var(--color-bg);
-  padding: 0.75rem 1rem;
+  padding: calc(0.75rem - 1px) calc(1rem - 1px);
   transition:
     background 160ms ease,
-    outline-color 160ms ease;
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .searchField:focus-within {
+  border-color: var(--color-focus-border);
   background: var(--color-surface);
-  outline: 3px solid var(--color-accent-soft);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
 }
 
 .searchIcon {
@@ -212,21 +216,100 @@
   z-index: 1;
   margin-top: auto;
   border-top: 1px solid var(--color-border);
-  padding: 1rem;
+  padding: 0.5rem;
   background: var(--color-surface);
-}
-
-.newConversationLabel {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-size: var(--text-sm);
-  font-weight: var(--font-strong);
 }
 
 .newConversationControls {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  align-items: center;
   gap: 0.5rem;
+}
+
+.newConversationField {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  padding: calc(0.75rem - 1px) calc(1rem - 1px);
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.newConversationField:focus-within {
+  border-color: var(--color-focus-border);
+  background: var(--color-surface);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+}
+
+.newConversationIcon,
+.createConversationIcon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.newConversationInput {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  outline: none;
+}
+
+.newConversationInput::placeholder {
+  color: var(--color-muted);
+  opacity: 1;
+}
+
+.newConversationInput:disabled {
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+.createConversationButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-surface);
+  cursor: pointer;
+  box-shadow: var(--shadow-raised);
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.createConversationButton:hover:not(:disabled),
+.createConversationButton:focus-visible:not(:disabled) {
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.createConversationButton:focus-visible {
+  outline: 3px solid var(--color-accent-soft);
+}
+
+.createConversationButton:disabled {
+  background: var(--color-border);
+  color: var(--color-muted);
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 .textInput {
@@ -438,12 +521,6 @@
   border-top: 1px solid var(--color-border);
   padding: 1rem;
   background: var(--color-surface);
-}
-
-.composerLabel {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: var(--font-strong);
 }
 
 .textarea {

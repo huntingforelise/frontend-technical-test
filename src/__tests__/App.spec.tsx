@@ -279,7 +279,7 @@ describe('App', () => {
 
     fireEvent.change(recipientInput, { target: { value: 'Inconnu' } })
 
-    expect(await screen.findByText('Aucun contact trouve.')).toBeInTheDocument()
+    expect(await screen.findByText('Aucun contact trouvé.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Creer' })).toBeDisabled()
   })
 

@@ -509,33 +509,62 @@ const Home = (): ReactElement => {
               </div>
             )}
             <label
-              className={styles.newConversationLabel}
+              className={styles.srOnly}
               htmlFor="new-conversation-recipient"
             >
               Nouvelle conversation
             </label>
             <div className={styles.newConversationControls}>
-              <input
-                aria-describedby="new-conversation-help"
-                className={styles.textInput}
-                disabled={
-                  userState === 'loading' ||
-                  isCreatingConversation ||
-                  availableRecipients.length === 0
-                }
-                id="new-conversation-recipient"
-                onChange={(event) =>
-                  setNewConversationRecipientQuery(event.target.value)
-                }
-                placeholder="Tapez un nom"
-                value={newConversationRecipientQuery}
-              />
+              <div className={styles.newConversationField}>
+                <svg
+                  className={styles.newConversationIcon}
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                >
+                  <circle cx="9" cy="8" r="4" />
+                  <path d="M3 21a6 6 0 0 1 12 0" />
+                  <path d="M19 8v6" />
+                  <path d="M16 11h6" />
+                </svg>
+                <input
+                  aria-describedby={
+                    userState === 'success' &&
+                    newConversationRecipientQuery.trim().length > 0 &&
+                    matchingRecipients.length === 0
+                      ? 'new-conversation-help'
+                      : undefined
+                  }
+                  className={styles.newConversationInput}
+                  disabled={
+                    userState === 'loading' ||
+                    isCreatingConversation ||
+                    availableRecipients.length === 0
+                  }
+                  id="new-conversation-recipient"
+                  onChange={(event) =>
+                    setNewConversationRecipientQuery(event.target.value)
+                  }
+                  placeholder="Tapez un nom"
+                  value={newConversationRecipientQuery}
+                />
+              </div>
               <button
-                className={styles.secondaryButton}
+                className={styles.createConversationButton}
                 disabled={!canCreateConversation}
                 type="submit"
+                title={isCreatingConversation ? 'Creation...' : 'Creer'}
               >
-                {isCreatingConversation ? 'Creation...' : 'Creer'}
+                <span className={styles.srOnly}>
+                  {isCreatingConversation ? 'Creation...' : 'Creer'}
+                </span>
+                <svg
+                  className={styles.createConversationIcon}
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 5v14" />
+                  <path d="M5 12h14" />
+                </svg>
               </button>
             </div>
             {userState === 'loading' && (
@@ -562,14 +591,7 @@ const Home = (): ReactElement => {
               newConversationRecipientQuery.trim().length > 0 &&
               matchingRecipients.length === 0 && (
                 <p className={styles.formHint} id="new-conversation-help">
-                  Aucun contact trouve.
-                </p>
-              )}
-            {userState === 'success' &&
-              (newConversationRecipientQuery.trim().length === 0 ||
-                matchingRecipients.length > 0) && (
-                <p className={styles.formHint} id="new-conversation-help">
-                  Tapez le nom d’un contact pour le retrouver.
+                  Aucun contact trouvé.
                 </p>
               )}
             {createConversationError !== null && (
@@ -673,7 +695,7 @@ const Home = (): ReactElement => {
               </div>
 
               <form className={styles.composer} onSubmit={handleSendMessage}>
-                <label className={styles.composerLabel} htmlFor="message-body">
+                <label className={styles.srOnly} htmlFor="message-body">
                   Nouveau message
                 </label>
                 <textarea
