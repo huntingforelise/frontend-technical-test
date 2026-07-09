@@ -158,7 +158,7 @@
 }
 
 .conversationList li + li {
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid rgb(222 216 208 / 70%);
 }
 
 .searchBox {
@@ -384,10 +384,11 @@
 }
 
 .conversationButton {
+  position: relative;
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-columns: 40px minmax(0, 1fr);
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.85rem;
   width: 100%;
   border: 1px solid transparent;
   border-radius: var(--radius-control);
@@ -399,34 +400,35 @@
   transition:
     background 160ms ease,
     border-color 160ms ease,
-    transform 160ms ease,
-    box-shadow 160ms ease;
+    color 160ms ease;
 }
 
 .conversationButton:hover,
 .conversationButton:focus-visible {
-  border-color: var(--color-accent);
-  background: var(--color-accent-soft);
-  box-shadow: 0 8px 18px rgb(31 41 51 / 8%);
+  border-color: transparent;
+  background: rgb(31 41 51 / 4%);
   outline: none;
-  transform: translateY(-1px);
 }
 
 .selectedConversation {
-  border-color: var(--color-accent);
+  border-color: transparent;
   background: var(--color-accent-soft);
-  box-shadow: var(--shadow-raised);
+}
+
+.conversationButton:focus-visible {
+  border-color: var(--color-focus-border);
 }
 
 .avatar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: var(--color-avatar);
   color: var(--color-surface);
+  font-size: 0.9rem;
   font-weight: var(--font-strong);
 }
 
@@ -434,19 +436,24 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.2rem;
 }
 
 .conversationName {
   overflow: hidden;
-  font-weight: var(--font-strong);
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .conversationDate {
   color: var(--color-muted);
-  font-size: var(--text-sm);
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.25;
+  white-space: nowrap;
 }
 
 .conversationChevron {
@@ -702,24 +709,12 @@
   }
 
   .conversationButton {
-    grid-template-columns: 44px minmax(0, 1fr) 16px;
+    grid-template-columns: 40px minmax(0, 1fr) 16px;
   }
 
   .conversationChevron {
     display: block;
     justify-self: end;
-  }
-
-  .selectedConversation {
-    border-color: transparent;
-    background: transparent;
-    box-shadow: none;
-  }
-
-  .selectedConversation:hover,
-  .selectedConversation:focus-visible {
-    border-color: var(--color-accent);
-    background: var(--color-accent-soft);
   }
 
   .backButton {

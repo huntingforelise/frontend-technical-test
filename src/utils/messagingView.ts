@@ -8,6 +8,16 @@ const dateTimeFormatter = new Intl.DateTimeFormat('fr-FR', {
   minute: '2-digit',
 })
 
+const conversationDateFormatter = new Intl.DateTimeFormat('fr-FR', {
+  day: 'numeric',
+  month: 'short',
+})
+
+const conversationTimeFormatter = new Intl.DateTimeFormat('fr-FR', {
+  hour: '2-digit',
+  minute: '2-digit',
+})
+
 export const getConversationParticipant = (
   conversation: Conversation,
   loggedUserId: number
@@ -42,4 +52,12 @@ export const sortMessages = (messages: Message[]): Message[] => {
 
 export const formatTimestamp = (timestamp: number): string => {
   return dateTimeFormatter.format(new Date(timestamp * 1000))
+}
+
+export const formatConversationTimestamp = (timestamp: number): string => {
+  const date = new Date(timestamp * 1000)
+  const formattedDate = conversationDateFormatter.format(date)
+  const formattedTime = conversationTimeFormatter.format(date)
+
+  return `${formattedDate} ${formattedTime}`
 }

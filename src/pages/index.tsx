@@ -13,6 +13,7 @@ import {
   sendMessage,
 } from '../utils/messagingApi'
 import {
+  formatConversationTimestamp,
   formatTimestamp,
   getConversationParticipant,
   sortConversations,
@@ -471,7 +472,9 @@ const Home = (): ReactElement => {
                           {participant.nickname}
                         </span>
                         <span className={styles.conversationDate}>
-                          {formatTimestamp(conversation.lastMessageTimestamp)}
+                          {formatConversationTimestamp(
+                            conversation.lastMessageTimestamp
+                          )}
                         </span>
                       </span>
                       <span
@@ -704,7 +707,7 @@ const Home = (): ReactElement => {
                   className={styles.textarea}
                   maxLength={MAX_MESSAGE_LENGTH + 1}
                   onChange={(event) => setDraft(event.target.value)}
-                  placeholder="Ecrivez votre message"
+                  placeholder="Écrivez votre message"
                   value={draft}
                   disabled={isSending || messageState === 'loading'}
                 />
