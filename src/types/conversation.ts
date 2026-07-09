@@ -5,4 +5,5 @@ export interface Conversation {
   senderId: number
   senderNickname: string
   lastMessageTimestamp: number
+  lastMessageBody?: string
 }

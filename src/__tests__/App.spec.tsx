@@ -9,6 +9,7 @@ const conversations = [
     senderId: 1,
     senderNickname: 'Thibaut',
     lastMessageTimestamp: 1625637849,
+    lastMessageBody: 'Bonjour Jeremie',
   },
   {
     id: 3,
@@ -17,6 +18,7 @@ const conversations = [
     senderId: 4,
     senderNickname: 'Elodie',
     lastMessageTimestamp: 1625648667,
+    lastMessageBody: 'Bonjour Thibaut',
   },
 ]
 
@@ -130,7 +132,7 @@ describe('App', () => {
     expect(
       await screen.findByRole('heading', { name: 'Elodie' })
     ).toBeInTheDocument()
-    expect(screen.getByText('Bonjour Thibaut')).toBeInTheDocument()
+    expect(screen.getAllByText('Bonjour Thibaut')).toHaveLength(2)
   })
 
   it('loads messages when a conversation is selected', async () => {
@@ -228,6 +230,12 @@ describe('App', () => {
         body: expect.stringContaining('"recipientId":3'),
       })
     )
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3005/conversations/1',
+      expect.objectContaining({
+        body: expect.stringContaining('"lastMessageBody":""'),
+      })
+    )
   })
 
   it('opens an existing conversation instead of creating a duplicate', async () => {
@@ -245,7 +253,7 @@ describe('App', () => {
     expect(
       await screen.findByRole('heading', { name: 'Jeremie' })
     ).toBeInTheDocument()
-    expect(await screen.findByText('Bonjour Jeremie')).toBeInTheDocument()
+    expect(await screen.findAllByText('Bonjour Jeremie')).toHaveLength(2)
     expect(fetchMock).not.toHaveBeenCalledWith(
       'http://localhost:3005/conversations/1',
       expect.objectContaining({ method: 'POST' })

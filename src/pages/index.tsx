@@ -270,6 +270,7 @@ const Home = (): ReactElement => {
       senderId: loggedUser.id,
       senderNickname: loggedUser.nickname,
       lastMessageTimestamp,
+      lastMessageBody: '',
     }
 
     setIsCreatingConversation(true)
@@ -337,10 +338,16 @@ const Home = (): ReactElement => {
         sortMessages([...currentMessages, nextMessage])
       )
       setConversations((currentConversations) =>
-        currentConversations.map((conversation) =>
-          conversation.id === selectedConversation.id
-            ? { ...conversation, lastMessageTimestamp: timestamp }
-            : conversation
+        sortConversations(
+          currentConversations.map((conversation) =>
+            conversation.id === selectedConversation.id
+              ? {
+                  ...conversation,
+                  lastMessageTimestamp: timestamp,
+                  lastMessageBody: body,
+                }
+              : conversation
+          )
         )
       )
       setDraft('')
@@ -468,13 +475,18 @@ const Home = (): ReactElement => {
                         {participant.nickname.charAt(0).toUpperCase()}
                       </span>
                       <span className={styles.conversationMeta}>
-                        <span className={styles.conversationName}>
-                          {participant.nickname}
+                        <span className={styles.conversationSummary}>
+                          <span className={styles.conversationName}>
+                            {participant.nickname}
+                          </span>
+                          <span className={styles.conversationDate}>
+                            {formatConversationTimestamp(
+                              conversation.lastMessageTimestamp
+                            )}
+                          </span>
                         </span>
-                        <span className={styles.conversationDate}>
-                          {formatConversationTimestamp(
-                            conversation.lastMessageTimestamp
-                          )}
+                        <span className={styles.conversationPreview}>
+                          {conversation.lastMessageBody || 'Aucun message'}
                         </span>
                       </span>
                       <span
