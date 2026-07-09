@@ -80,9 +80,11 @@ The starter page was replaced with a responsive messaging interface for the requ
 
 - list every conversation for the logged-in user
 - automatically open the newest conversation
+- show the latest message preview and activity time for each conversation
 - display the selected conversation messages in chronological order
 - allow the logged-in user to send a new message
 - allow the logged-in user to create a new empty conversation
+- open an existing conversation instead of creating a duplicate when the contact already has a thread
 - keep the interface usable on desktop and mobile
 
 The logged-in user still comes from `getLoggedUserId()` and defaults to user `1`.
@@ -95,6 +97,9 @@ The implementation stays close to the provided scaffold and avoids extra runtime
 - `src/utils/messagingView.ts` contains pure display helpers for sorting, participant labels, and date formatting.
 - `src/pages/index.tsx` owns the page state because the exercise is intentionally small and has one main screen.
 - `src/styles/Home.module.css` contains the responsive layout and visual states.
+- `src/server/middleware/conversations.js` adapts the JSON server so conversation queries return both sent and received threads for the logged-in user.
+
+Conversation rows also display a last-message preview. To avoid fetching every message thread just to render the list, the conversation summary includes `lastMessageBody` alongside `lastMessageTimestamp`. When a new message is posted, the middleware writes the message and updates the matching conversation summary in the same request. In a production backend this would be a database transaction; here it is simulated in `db.json` because the exercise uses `json-server`.
 
 ## Safety guards
 
@@ -108,10 +113,14 @@ The interface handles the shaky API and common input issues:
 - the composer is disabled while sending
 - failed sends keep the draft in place so the user can retry
 - new messages appear only after the API confirms creation
+- the conversation preview is updated after a confirmed send
+- starting a conversation with an existing contact navigates to the existing thread instead of creating a duplicate
 
 ## Accessibility and responsiveness
 
 The UI uses semantic sections, headings, form labels, `role="status"` for loading feedback, and `role="alert"` for failures. Buttons have clear focus states and the mobile layout switches between the conversation list and thread view with a back action.
+
+The interface also keeps common actions close to the messaging context: the composer uses an integrated send button, the conversation list supports search, and the new-conversation control suggests matching contacts while disabling creation when no contact is found.
 
 ## Running the project
 
@@ -129,4 +138,4 @@ npm test
 npm run build
 ```
 
-The app tests cover loading conversations, selecting a thread, creating a conversation, sending a message, blocking empty messages, and graceful API failures.
+The app tests cover loading conversations, selecting a thread, creating a conversation, opening an existing thread instead of duplicating it, sending a message, blocking empty messages, and graceful API failures. The latest local verification passed with 12 Jest tests and a successful production build.
