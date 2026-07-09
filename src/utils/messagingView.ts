@@ -14,6 +14,12 @@ const conversationDateFormatter = new Intl.DateTimeFormat('fr-FR', {
   month: 'short',
 });
 
+const conversationDateWithYearFormatter = new Intl.DateTimeFormat('fr-FR', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+});
+
 const conversationTimeFormatter = new Intl.DateTimeFormat('fr-FR', {
   hour: '2-digit',
   minute: '2-digit',
@@ -131,10 +137,27 @@ export const formatTimestamp = (timestamp: number): string => {
   return dateTimeFormatter.format(new Date(timestamp * 1000));
 };
 
-export const formatConversationTimestamp = (timestamp: number): string => {
-  const date = new Date(timestamp * 1000);
-  const formattedDate = conversationDateFormatter.format(date);
-  const formattedTime = conversationTimeFormatter.format(date);
+const isSameDay = (date: Date, otherDate: Date): boolean => {
+  return (
+    date.getFullYear() === otherDate.getFullYear() &&
+    date.getMonth() === otherDate.getMonth() &&
+    date.getDate() === otherDate.getDate()
+  );
+};
 
-  return `${formattedDate} ${formattedTime}`;
+export const formatConversationTimestamp = (
+  timestamp: number,
+  currentDate = new Date()
+): string => {
+  const date = new Date(timestamp * 1000);
+
+  if (isSameDay(date, currentDate)) {
+    return conversationTimeFormatter.format(date);
+  }
+
+  if (date.getFullYear() === currentDate.getFullYear()) {
+    return conversationDateFormatter.format(date);
+  }
+
+  return conversationDateWithYearFormatter.format(date);
 };
