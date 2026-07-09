@@ -103,6 +103,8 @@ The implementation stays close to the provided scaffold and avoids extra runtime
 
 Conversation rows also display a last-message preview. To avoid fetching every message thread just to render the list, the conversation summary includes `lastMessageBody` alongside `lastMessageTimestamp`. When a new message is posted, the middleware writes the message and updates the matching conversation summary in the same request. In a production backend this would be a database transaction; here it is simulated in `db.json` because the exercise uses `json-server`.
 
+Styling uses plain CSS Modules rather than Tailwind. This keeps the submission dependency-light, scoped, and easy to review for a small single-screen app. If the project grew or needed to align with an existing utility-first design system, migrating to Tailwind CSS would be straightforward; the latest checked version was Tailwind CSS `4.3.2`.
+
 ## Safety guards
 
 The interface handles the shaky API and common input issues:
