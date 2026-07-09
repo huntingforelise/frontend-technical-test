@@ -1,5 +1,6 @@
 import type { Conversation } from '../types/conversation';
 import type { Message } from '../types/message';
+import type { User } from '../types/user';
 
 const dateTimeFormatter = new Intl.DateTimeFormat('fr-FR', {
   day: '2-digit',
@@ -48,6 +49,82 @@ export const sortConversations = (
 
 export const sortMessages = (messages: Message[]): Message[] => {
   return [...messages].sort((a, b) => a.timestamp - b.timestamp);
+};
+
+export const getUserInitial = (nickname: string): string => {
+  return nickname.trim().charAt(0).toUpperCase() || '?';
+};
+
+export const filterConversationsByParticipant = (
+  conversations: Conversation[],
+  search: string,
+  loggedUserId: number
+): Conversation[] => {
+  const normalizedSearch = search.trim().toLowerCase();
+
+  if (normalizedSearch.length === 0) {
+    return conversations;
+  }
+
+  return conversations.filter((conversation) => {
+    const participant = getConversationParticipant(conversation, loggedUserId);
+
+    return participant.nickname.toLowerCase().includes(normalizedSearch);
+  });
+};
+
+export const getAvailableRecipients = (
+  users: User[],
+  loggedUserId: number
+): User[] => {
+  return users.filter((user) => user.id !== loggedUserId);
+};
+
+export const filterRecipientsByQuery = (
+  recipients: User[],
+  query: string
+): User[] => {
+  const normalizedQuery = query.trim().toLowerCase();
+
+  if (normalizedQuery.length === 0) {
+    return recipients;
+  }
+
+  return recipients.filter((user) =>
+    user.nickname.toLowerCase().includes(normalizedQuery)
+  );
+};
+
+export const findSelectedRecipient = (
+  recipients: User[],
+  matchingRecipients: User[],
+  query: string
+): User | null => {
+  const normalizedQuery = query.trim().toLowerCase();
+
+  if (normalizedQuery.length === 0) {
+    return null;
+  }
+
+  return (
+    recipients.find(
+      (user) => user.nickname.toLowerCase() === normalizedQuery
+    ) ?? (matchingRecipients.length === 1 ? matchingRecipients[0] : null)
+  );
+};
+
+export const findConversationWithParticipant = (
+  conversations: Conversation[],
+  participantId: number,
+  loggedUserId: number
+): Conversation | null => {
+  return (
+    conversations.find(
+      (conversation) =>
+        getConversationParticipant(conversation, loggedUserId).id ===
+        participantId
+    ) ?? null
+  );
 };
 
 export const formatTimestamp = (timestamp: number): string => {

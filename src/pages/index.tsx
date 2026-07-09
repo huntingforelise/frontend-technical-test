@@ -1,7 +1,13 @@
 import type { FormEvent, ReactElement } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Head from 'next/head';
+import { Avatar } from '../components/Avatar';
+import { ConversationList } from '../components/ConversationList';
+import { MessageComposer } from '../components/MessageComposer';
+import { MessageThread } from '../components/MessageThread';
+import { NewConversationForm } from '../components/NewConversationForm';
 import type { Conversation } from '../types/conversation';
+import type { LoadState } from '../types/loadState';
 import type { Message } from '../types/message';
 import type { User } from '../types/user';
 import { getLoggedUserId } from '../utils/getLoggedUserId';
@@ -13,8 +19,11 @@ import {
   sendMessage,
 } from '../utils/messagingApi';
 import {
-  formatConversationTimestamp,
-  formatTimestamp,
+  filterConversationsByParticipant,
+  filterRecipientsByQuery,
+  findConversationWithParticipant,
+  findSelectedRecipient,
+  getAvailableRecipients,
   getConversationParticipant,
   sortConversations,
   sortMessages,
@@ -25,7 +34,6 @@ const MAX_MESSAGE_LENGTH = 1000;
 const REFRESH_INTERVAL_MS = 15000;
 const loggedUserId = getLoggedUserId();
 
-type LoadState = 'idle' | 'loading' | 'success' | 'error';
 type LoadOptions = {
   silent?: boolean;
 };
@@ -56,22 +64,15 @@ const Home = (): ReactElement => {
     () => sortConversations(conversations),
     [conversations]
   );
-  const filteredConversations = useMemo(() => {
-    const normalizedSearch = conversationSearch.trim().toLowerCase();
-
-    if (normalizedSearch.length === 0) {
-      return orderedConversations;
-    }
-
-    return orderedConversations.filter((conversation) => {
-      const participant = getConversationParticipant(
-        conversation,
+  const filteredConversations = useMemo(
+    () =>
+      filterConversationsByParticipant(
+        orderedConversations,
+        conversationSearch,
         loggedUserId
-      );
-
-      return participant.nickname.toLowerCase().includes(normalizedSearch);
-    });
-  }, [conversationSearch, orderedConversations]);
+      ),
+    [conversationSearch, orderedConversations]
+  );
   const selectedConversation = useMemo(
     () =>
       orderedConversations.find(
@@ -84,43 +85,36 @@ const Home = (): ReactElement => {
     : null;
   const orderedMessages = useMemo(() => sortMessages(messages), [messages]);
   const availableRecipients = useMemo(
-    () => users.filter((user) => user.id !== loggedUserId),
+    () => getAvailableRecipients(users, loggedUserId),
     [users]
   );
-  const matchingRecipients = useMemo(() => {
-    const normalizedQuery = newConversationRecipientQuery.trim().toLowerCase();
-
-    if (normalizedQuery.length === 0) {
-      return availableRecipients;
-    }
-
-    return availableRecipients.filter((user) =>
-      user.nickname.toLowerCase().includes(normalizedQuery)
-    );
-  }, [availableRecipients, newConversationRecipientQuery]);
-  const selectedRecipient = useMemo(() => {
-    const normalizedQuery = newConversationRecipientQuery.trim().toLowerCase();
-
-    if (normalizedQuery.length === 0) {
-      return null;
-    }
-
-    return (
-      availableRecipients.find(
-        (user) => user.nickname.toLowerCase() === normalizedQuery
-      ) ?? (matchingRecipients.length === 1 ? matchingRecipients[0] : null)
-    );
-  }, [availableRecipients, matchingRecipients, newConversationRecipientQuery]);
+  const matchingRecipients = useMemo(
+    () =>
+      filterRecipientsByQuery(
+        availableRecipients,
+        newConversationRecipientQuery
+      ),
+    [availableRecipients, newConversationRecipientQuery]
+  );
+  const selectedRecipient = useMemo(
+    () =>
+      findSelectedRecipient(
+        availableRecipients,
+        matchingRecipients,
+        newConversationRecipientQuery
+      ),
+    [availableRecipients, matchingRecipients, newConversationRecipientQuery]
+  );
   const hasExactRecipientMatch =
     selectedRecipient !== null &&
     selectedRecipient.nickname.toLowerCase() ===
       newConversationRecipientQuery.trim().toLowerCase();
   const existingConversationForSelectedRecipient = selectedRecipient
-    ? (orderedConversations.find(
-        (conversation) =>
-          getConversationParticipant(conversation, loggedUserId).id ===
-          selectedRecipient.id
-      ) ?? null)
+    ? findConversationWithParticipant(
+        orderedConversations,
+        selectedRecipient.id,
+        loggedUserId
+      )
     : null;
   const shouldShowRecipientSuggestions =
     userState === 'success' &&
@@ -385,9 +379,10 @@ const Home = (): ReactElement => {
           <h1 className={styles.title}>Messages</h1>
         </div>
         <div className={styles.currentUser} aria-label="Utilisateur connecté">
-          <span className={styles.currentUserAvatar} aria-hidden="true">
-            {loggedUser.nickname.charAt(0).toUpperCase()}
-          </span>
+          <Avatar
+            nickname={loggedUser.nickname}
+            className={styles.currentUserAvatar}
+          />
           <span>{loggedUser.nickname}</span>
         </div>
       </header>
@@ -425,356 +420,54 @@ const Home = (): ReactElement => {
             </div>
           </div>
 
-          {conversationState === 'loading' && (
-            <div className={styles.status} role="status">
-              Chargement des conversations...
-            </div>
-          )}
+          <ConversationList
+            conversations={filteredConversations}
+            conversationState={conversationState}
+            loggedUserId={loggedUserId}
+            selectedConversationId={selectedConversationId}
+            totalConversationCount={orderedConversations.length}
+            onRetry={retryInitialData}
+            onSelectConversation={handleSelectConversation}
+          />
 
-          {conversationState === 'error' && (
-            <div className={styles.errorBox} role="alert">
-              Impossible de charger les conversations.
-              <button
-                className={styles.inlineButton}
-                type="button"
-                onClick={retryInitialData}
-              >
-                Réessayer
-              </button>
-            </div>
-          )}
-
-          {conversationState === 'success' &&
-            orderedConversations.length === 0 && (
-              <div className={styles.emptyState}>
-                Aucune conversation pour le moment.
-              </div>
-            )}
-
-          {conversationState === 'success' &&
-            orderedConversations.length > 0 &&
-            filteredConversations.length === 0 && (
-              <div className={styles.emptyState}>
-                Aucune conversation ne correspond à cette recherche.
-              </div>
-            )}
-
-          {filteredConversations.length > 0 && (
-            <ul
-              className={styles.conversationList}
-              aria-label="Liste des conversations"
-            >
-              {filteredConversations.map((conversation) => {
-                const participant = getConversationParticipant(
-                  conversation,
-                  loggedUserId
-                );
-                const isSelected = conversation.id === selectedConversationId;
-
-                return (
-                  <li key={conversation.id}>
-                    <button
-                      className={`${styles.conversationButton} ${isSelected ? styles.selectedConversation : ''}`}
-                      type="button"
-                      aria-current={isSelected ? 'true' : undefined}
-                      onClick={() => handleSelectConversation(conversation.id)}
-                    >
-                      <span className={styles.avatar} aria-hidden="true">
-                        {participant.nickname.charAt(0).toUpperCase()}
-                      </span>
-                      <span className={styles.conversationMeta}>
-                        <span className={styles.conversationSummary}>
-                          <span className={styles.conversationName}>
-                            {participant.nickname}
-                          </span>
-                          <span className={styles.conversationDate}>
-                            {formatConversationTimestamp(
-                              conversation.lastMessageTimestamp
-                            )}
-                          </span>
-                        </span>
-                        <span className={styles.conversationPreview}>
-                          {conversation.lastMessageBody || 'Aucun message'}
-                        </span>
-                      </span>
-                      <span
-                        className={styles.conversationChevron}
-                        aria-hidden="true"
-                      />
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-
-          <form
-            className={styles.newConversation}
+          <NewConversationForm
+            availableRecipientsCount={availableRecipients.length}
+            canCreateConversation={canCreateConversation}
+            createConversationError={createConversationError}
+            isCreatingConversation={isCreatingConversation}
+            matchingRecipients={matchingRecipients}
+            query={newConversationRecipientQuery}
+            shouldShowSuggestions={shouldShowRecipientSuggestions}
+            userState={userState}
+            onQueryChange={setNewConversationRecipientQuery}
+            onRetryUsers={loadUsers}
+            onSelectRecipient={setNewConversationRecipientQuery}
             onSubmit={handleCreateConversation}
-          >
-            {shouldShowRecipientSuggestions && (
-              <div
-                className={styles.recipientSuggestions}
-                aria-label="Contacts suggérés"
-              >
-                {matchingRecipients.map((user) => (
-                  <button
-                    className={styles.recipientSuggestion}
-                    key={user.id}
-                    type="button"
-                    onClick={() =>
-                      setNewConversationRecipientQuery(user.nickname)
-                    }
-                  >
-                    {user.nickname}
-                  </button>
-                ))}
-              </div>
-            )}
-            <label
-              className={styles.srOnly}
-              htmlFor="new-conversation-recipient"
-            >
-              Nouvelle conversation
-            </label>
-            <div className={styles.newConversationControls}>
-              <div className={styles.newConversationField}>
-                <svg
-                  className={styles.newConversationIcon}
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                >
-                  <circle cx="9" cy="8" r="4" />
-                  <path d="M3 21a6 6 0 0 1 12 0" />
-                  <path d="M19 8v6" />
-                  <path d="M16 11h6" />
-                </svg>
-                <input
-                  aria-describedby={
-                    userState === 'success' &&
-                    newConversationRecipientQuery.trim().length > 0 &&
-                    matchingRecipients.length === 0
-                      ? 'new-conversation-help'
-                      : undefined
-                  }
-                  className={styles.newConversationInput}
-                  disabled={
-                    userState === 'loading' ||
-                    isCreatingConversation ||
-                    availableRecipients.length === 0
-                  }
-                  id="new-conversation-recipient"
-                  onChange={(event) =>
-                    setNewConversationRecipientQuery(event.target.value)
-                  }
-                  placeholder="Tapez un nom"
-                  value={newConversationRecipientQuery}
-                />
-              </div>
-              <button
-                className={styles.createConversationButton}
-                disabled={!canCreateConversation}
-                type="submit"
-                title={
-                  isCreatingConversation ? 'Création en cours...' : 'Créer'
-                }
-              >
-                <span className={styles.srOnly}>
-                  {isCreatingConversation ? 'Création en cours...' : 'Créer'}
-                </span>
-                <svg
-                  className={styles.createConversationIcon}
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 5v14" />
-                  <path d="M5 12h14" />
-                </svg>
-              </button>
-            </div>
-            {userState === 'loading' && (
-              <p className={styles.formHint} role="status">
-                Chargement des contacts...
-              </p>
-            )}
-            {userState === 'error' && (
-              <p className={styles.formError} role="alert">
-                Impossible de charger les contacts.
-                <button
-                  className={styles.inlineButton}
-                  type="button"
-                  onClick={loadUsers}
-                >
-                  Réessayer
-                </button>
-              </p>
-            )}
-            {userState === 'success' && availableRecipients.length === 0 && (
-              <p className={styles.formHint}>Aucun contact disponible.</p>
-            )}
-            {userState === 'success' &&
-              newConversationRecipientQuery.trim().length > 0 &&
-              matchingRecipients.length === 0 && (
-                <p className={styles.formHint} id="new-conversation-help">
-                  Aucun contact trouvé.
-                </p>
-              )}
-            {createConversationError !== null && (
-              <p className={styles.formError} role="alert">
-                {createConversationError}
-              </p>
-            )}
-          </form>
+          />
         </section>
 
-        <section
-          className={`${styles.thread} ${isThreadVisibleOnMobile ? styles.threadVisibleMobile : ''}`}
-          aria-labelledby="thread-title"
+        <MessageThread
+          isVisibleOnMobile={isThreadVisibleOnMobile}
+          loggedUserId={loggedUserId}
+          messageState={messageState}
+          messages={orderedMessages}
+          participant={selectedParticipant}
+          selectedConversationId={selectedConversationId}
+          onBack={() => setIsThreadVisibleOnMobile(false)}
+          onRetryMessages={(conversationId) => loadMessages(conversationId)}
         >
-          {selectedConversation === null ? (
-            <div className={styles.emptyThread}>
-              Sélectionnez une conversation pour consulter les messages.
-            </div>
-          ) : (
-            <>
-              <div className={styles.threadHeader}>
-                <button
-                  className={styles.backButton}
-                  type="button"
-                  aria-label="Retour aux conversations"
-                  onClick={() => setIsThreadVisibleOnMobile(false)}
-                >
-                  <svg
-                    aria-hidden="true"
-                    focusable="false"
-                    viewBox="0 0 24 24"
-                    className={styles.backIcon}
-                  >
-                    <path
-                      d="M15 18L9 12L15 6"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                    />
-                  </svg>
-                </button>
-                <div className={styles.threadIdentity}>
-                  <span className={styles.avatar} aria-hidden="true">
-                    {selectedParticipant?.nickname.charAt(0).toUpperCase()}
-                  </span>
-                  <h2 id="thread-title">{selectedParticipant?.nickname}</h2>
-                </div>
-              </div>
-
-              <div className={styles.messageList} aria-live="polite">
-                {messageState === 'loading' && (
-                  <div className={styles.status} role="status">
-                    Chargement des messages...
-                  </div>
-                )}
-
-                {messageState === 'error' && (
-                  <div className={styles.errorBox} role="alert">
-                    Impossible de charger les messages.
-                    <button
-                      className={styles.inlineButton}
-                      type="button"
-                      onClick={() => loadMessages(selectedConversation.id)}
-                    >
-                      Réessayer
-                    </button>
-                  </div>
-                )}
-
-                {messageState === 'success' && orderedMessages.length === 0 && (
-                  <div className={styles.emptyState}>
-                    Aucun message dans cette conversation.
-                  </div>
-                )}
-
-                {orderedMessages.map((message) => {
-                  const isOwnMessage = message.authorId === loggedUserId;
-
-                  return (
-                    <article
-                      className={`${styles.messageRow} ${isOwnMessage ? styles.ownMessageRow : ''}`}
-                      key={message.id}
-                    >
-                      <div
-                        className={`${styles.messageBubble} ${isOwnMessage ? styles.ownMessage : ''}`}
-                      >
-                        <p>{message.body}</p>
-                        <time
-                          dateTime={new Date(
-                            message.timestamp * 1000
-                          ).toISOString()}
-                        >
-                          {formatTimestamp(message.timestamp)}
-                        </time>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-
-              <form className={styles.composer} onSubmit={handleSendMessage}>
-                <label className={styles.srOnly} htmlFor="message-body">
-                  Nouveau message
-                </label>
-                <div className={styles.composerField}>
-                  <textarea
-                    id="message-body"
-                    aria-describedby="message-help"
-                    className={styles.textarea}
-                    maxLength={MAX_MESSAGE_LENGTH + 1}
-                    onChange={(event) => setDraft(event.target.value)}
-                    placeholder="Écrivez votre message"
-                    value={draft}
-                    disabled={isSending || messageState === 'loading'}
-                  />
-                  <button
-                    className={styles.primaryButton}
-                    type="submit"
-                    disabled={!canSend}
-                    title={isSending ? 'Envoi en cours...' : 'Envoyer'}
-                  >
-                    <span className={styles.srOnly}>
-                      {isSending ? 'Envoi en cours...' : 'Envoyer'}
-                    </span>
-                    <svg
-                      aria-hidden="true"
-                      focusable="false"
-                      viewBox="0 0 24 24"
-                      className={styles.sendIcon}
-                    >
-                      <path
-                        d="M4.5 19.5L20 12L4.5 4.5L7 11.4L14 12L7 12.6L4.5 19.5Z"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                      />
-                    </svg>
-                  </button>
-                </div>
-                <p
-                  className={`${styles.helpText} ${isDraftTooLong ? styles.helpTextError : ''}`}
-                  id="message-help"
-                >
-                  {draft.length}/{MAX_MESSAGE_LENGTH}
-                </p>
-                {sendError !== null && (
-                  <p className={styles.sendError} role="alert">
-                    {sendError}
-                  </p>
-                )}
-              </form>
-            </>
-          )}
-        </section>
+          <MessageComposer
+            canSend={canSend}
+            draft={draft}
+            isDraftTooLong={isDraftTooLong}
+            isSending={isSending}
+            maxLength={MAX_MESSAGE_LENGTH}
+            messageState={messageState}
+            sendError={sendError}
+            onDraftChange={setDraft}
+            onSubmit={handleSendMessage}
+          />
+        </MessageThread>
       </main>
     </div>
   );
