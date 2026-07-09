@@ -94,8 +94,10 @@ The logged-in user still comes from `getLoggedUserId()` and defaults to user `1`
 The implementation stays close to the provided scaffold and avoids extra runtime dependencies.
 
 - `src/utils/messagingApi.ts` contains the small typed API client for the JSON server.
-- `src/utils/messagingView.ts` contains pure display helpers for sorting, participant labels, and date formatting.
-- `src/pages/index.tsx` owns the page state because the exercise is intentionally small and has one main screen.
+- `src/utils/messagingView.ts` contains pure display helpers for sorting, participant labels, conversation lookup, and date formatting.
+- `src/utils/messageSafety.ts` centralizes the message guardrails used before posting a draft.
+- `src/components/*` contains the conversation list, new-conversation control, thread, composer, and avatar components.
+- `src/pages/index.tsx` coordinates the page state because the exercise is intentionally small and has one main screen.
 - `src/styles/Home.module.css` contains the responsive layout and visual states.
 - `src/server/middleware/conversations.js` adapts the JSON server so conversation queries return both sent and received threads for the logged-in user.
 
@@ -116,11 +118,19 @@ The interface handles the shaky API and common input issues:
 - the conversation preview is updated after a confirmed send
 - starting a conversation with an existing contact navigates to the existing thread instead of creating a duplicate
 
+The message validation itself is kept as a pure helper so the maximum length, trimming, and empty-message checks can be unit tested without rendering the app.
+
 ## Accessibility and responsiveness
 
 The UI uses semantic sections, headings, form labels, `role="status"` for loading feedback, and `role="alert"` for failures. Buttons have clear focus states and the mobile layout switches between the conversation list and thread view with a back action.
 
 The interface also keeps common actions close to the messaging context: the composer uses an integrated send button, the conversation list supports search, and the new-conversation control suggests matching contacts while disabling creation when no contact is found.
+
+## Performance notes
+
+The current implementation keeps rendering work small by deriving sorted and filtered views with memoized helpers, avoiding unnecessary message fetches for the conversation list, and storing a denormalized last-message summary on each conversation. The app also polls quietly in the background so the UI can stay fresh without showing disruptive loading states.
+
+A good next step would be introducing React Query for the server state. It would give us request caching, stale-while-revalidate behavior, mutation lifecycle helpers, retry policies, and clearer separation between remote data and local UI state. I kept it out of this version to avoid adding a larger dependency and refactor late in the exercise.
 
 ## Running the project
 
@@ -135,7 +145,10 @@ The app expects the provided JSON server on `http://localhost:3005`.
 
 ```bash
 npm test
+npm run test:e2e
 npm run build
 ```
 
-The app tests cover loading conversations, selecting a thread, creating a conversation, opening an existing thread instead of duplicating it, sending a message, blocking empty messages, and graceful API failures. The latest local verification passed with 12 Jest tests and a successful production build.
+The Jest tests cover loading conversations, selecting a thread, filtering, creating a conversation, opening an existing thread instead of duplicating it, sending a message, blocking empty and over-limit messages, preserving drafts after failed sends, date formatting, and graceful API failures. The Playwright test covers the main desktop and mobile browsing path against the real Next app and JSON server.
+
+The latest local verification passed with 19 Jest tests, 2 Playwright checks, and a successful production build.

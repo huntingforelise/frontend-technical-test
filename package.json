@@ -9,6 +9,7 @@
     "start": "next start",
     "start-server": "json-server --watch src/server/db.json --routes src/server/routes.json --middlewares src/server/middleware/conversations.js --port 3005",
     "test": "jest",
+    "test:e2e": "playwright test",
     "lint": "next lint",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
@@ -23,6 +24,7 @@
     "sharp": "^0.33.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",

@@ -12,6 +12,10 @@ import type { Message } from '../types/message';
 import type { User } from '../types/user';
 import { getLoggedUserId } from '../utils/getLoggedUserId';
 import {
+  MAX_MESSAGE_LENGTH,
+  sanitizeMessageDraft,
+} from '../utils/messageSafety';
+import {
   createConversation,
   getConversations,
   getMessages,
@@ -30,7 +34,6 @@ import {
 } from '../utils/messagingView';
 import styles from '../styles/Home.module.css';
 
-const MAX_MESSAGE_LENGTH = 1000;
 const REFRESH_INTERVAL_MS = 15000;
 const loggedUserId = getLoggedUserId();
 
@@ -131,11 +134,10 @@ const Home = (): ReactElement => {
     nickname: `Utilisateur ${loggedUserId}`,
     token: '',
   };
-  const trimmedDraft = draft.trim();
-  const isDraftTooLong = draft.length > MAX_MESSAGE_LENGTH;
+  const draftValidation = sanitizeMessageDraft(draft);
+  const isDraftTooLong = draftValidation.isTooLong;
   const canSend =
-    trimmedDraft.length > 0 &&
-    !isDraftTooLong &&
+    draftValidation.isValid &&
     !isSending &&
     selectedConversation !== null &&
     messageState === 'success';
@@ -315,7 +317,7 @@ const Home = (): ReactElement => {
       return;
     }
 
-    const body = trimmedDraft;
+    const body = draftValidation.body;
     const timestamp = Math.floor(Date.now() / 1000);
 
     setIsSending(true);
