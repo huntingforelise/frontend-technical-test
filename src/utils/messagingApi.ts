@@ -2,7 +2,8 @@ import type { Conversation } from '../types/conversation'
 import type { Message } from '../types/message'
 import type { User } from '../types/user'
 
-const API_BASE_URL = 'http://localhost:3005'
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3005'
 
 type CreatedResource = {
   id: number
