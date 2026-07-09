@@ -6,9 +6,12 @@
   --color-border: #ded8d0;
   --color-accent: #ec6e24;
   --color-accent-soft: #fff5ef;
+  --color-avatar: #184653;
   --color-danger: #b42318;
   --radius-control: 8px;
   --radius-pill: 999px;
+  --shadow-soft: 0 18px 40px rgb(31 41 51 / 10%);
+  --shadow-raised: 0 10px 24px rgb(236 110 36 / 16%);
   --text-sm: 0.85rem;
   --font-strong: 800;
 
@@ -41,7 +44,7 @@
   margin: 0 0 0.2rem;
   color: var(--color-accent);
   font-size: var(--text-sm);
-  font-weight: 700;
+  font-weight: var(--font-strong);
 }
 
 .title {
@@ -58,6 +61,7 @@
   border-radius: var(--radius-pill);
   background: var(--color-surface);
   padding: 0.5rem 0.75rem 0.5rem 0.5rem;
+  box-shadow: 0 6px 16px rgb(31 41 51 / 8%);
   font-weight: 700;
 }
 
@@ -69,7 +73,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--color-text);
+  background: var(--color-avatar);
   color: var(--color-surface);
   font-size: var(--text-sm);
   font-weight: var(--font-strong);
@@ -93,6 +97,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
   background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
 }
 
 .sidebar {
@@ -168,9 +173,13 @@
   border-radius: var(--radius-pill);
   background: var(--color-bg);
   padding: 0.75rem 1rem;
+  transition:
+    background 160ms ease,
+    outline-color 160ms ease;
 }
 
 .searchField:focus-within {
+  background: var(--color-surface);
   outline: 3px solid var(--color-accent-soft);
 }
 
@@ -251,7 +260,7 @@
   border-radius: var(--radius-control);
   background: var(--color-surface);
   padding: 0.5rem;
-  box-shadow: 0 12px 24px rgb(31 41 51 / 16%);
+  box-shadow: var(--shadow-soft);
 }
 
 .recipientSuggestion {
@@ -264,6 +273,9 @@
   font-size: var(--text-sm);
   font-weight: var(--font-strong);
   cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
 }
 
 .recipientSuggestion:hover,
@@ -301,18 +313,26 @@
   color: inherit;
   text-align: left;
   cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .conversationButton:hover,
 .conversationButton:focus-visible {
   border-color: var(--color-accent);
   background: var(--color-accent-soft);
+  box-shadow: 0 8px 18px rgb(31 41 51 / 8%);
   outline: none;
+  transform: translateY(-1px);
 }
 
 .selectedConversation {
   border-color: var(--color-accent);
   background: var(--color-accent-soft);
+  box-shadow: var(--shadow-raised);
 }
 
 .avatar {
@@ -322,7 +342,7 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: var(--color-text);
+  background: var(--color-avatar);
   color: var(--color-surface);
   font-weight: var(--font-strong);
 }
@@ -388,6 +408,7 @@
   border-radius: var(--radius-control);
   background: var(--color-surface);
   padding: 0.75rem;
+  box-shadow: 0 8px 18px rgb(31 41 51 / 7%);
   overflow-wrap: anywhere;
 }
 
@@ -395,6 +416,7 @@
   border-color: var(--color-accent);
   background: var(--color-accent);
   color: var(--color-surface);
+  box-shadow: var(--shadow-raised);
 }
 
 .messageBubble p {
@@ -480,16 +502,22 @@
   background: var(--color-accent);
   color: var(--color-surface);
   padding: 0.75rem 1rem;
+  box-shadow: var(--shadow-raised);
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 .primaryButton:hover:not(:disabled),
 .primaryButton:focus-visible {
   outline: none;
+  transform: translateY(-1px);
 }
 
 .primaryButton:disabled {
   background: var(--color-border);
   color: var(--color-muted);
+  box-shadow: none;
   cursor: not-allowed;
 }
 
@@ -499,6 +527,9 @@
   background: var(--color-surface);
   color: var(--color-text);
   padding: 0.5rem 0.75rem;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease;
 }
 
 .secondaryButton:hover:not(:disabled),
@@ -506,6 +537,7 @@
 .backButton:hover,
 .backButton:focus-visible {
   border-color: var(--color-accent);
+  color: var(--color-accent);
   outline: none;
 }
 
@@ -604,6 +636,7 @@
   .selectedConversation {
     border-color: transparent;
     background: transparent;
+    box-shadow: none;
   }
 
   .selectedConversation:hover,
