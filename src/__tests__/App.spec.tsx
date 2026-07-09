@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import App from '../pages'
 
 const conversations = [
@@ -315,6 +315,55 @@ describe('App', () => {
       await screen.findByText('Impossible de charger les conversations.')
     ).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: 'Reessayer' })).toHaveLength(2)
+  })
+
+  it('reloads contacts when retrying the main conversation error', async () => {
+    let conversationRequests = 0
+    let userRequests = 0
+
+    global.fetch = jest.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+
+      if (url.endsWith('/conversations/1')) {
+        conversationRequests += 1
+
+        return conversationRequests === 1
+          ? mockJson(null, false)
+          : mockJson(conversations)
+      }
+
+      if (url.endsWith('/users')) {
+        userRequests += 1
+
+        return userRequests === 1 ? mockJson(null, false) : mockJson(users)
+      }
+
+      if (url.endsWith('/messages/3') && init?.method !== 'POST') {
+        return mockJson(conversationThreeMessages)
+      }
+
+      return mockJson(null, false)
+    })
+
+    render(<App />)
+
+    expect(
+      await screen.findByText('Impossible de charger les conversations.')
+    ).toBeInTheDocument()
+    expect(
+      await screen.findByText('Impossible de charger les contacts.')
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Reessayer' })[0])
+
+    expect(
+      await screen.findByRole('button', { name: /Elodie/i })
+    ).toBeInTheDocument()
+    await waitFor(() =>
+      expect(
+        screen.queryByText('Impossible de charger les contacts.')
+      ).not.toBeInTheDocument()
+    )
   })
 
   it('keeps the draft when sending fails', async () => {
