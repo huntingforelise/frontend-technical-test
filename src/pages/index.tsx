@@ -1,269 +1,277 @@
-import type { FormEvent, ReactElement } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import Head from 'next/head'
-import type { Conversation } from '../types/conversation'
-import type { Message } from '../types/message'
-import type { User } from '../types/user'
-import { getLoggedUserId } from '../utils/getLoggedUserId'
+import type { FormEvent, ReactElement } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import Head from 'next/head';
+import type { Conversation } from '../types/conversation';
+import type { Message } from '../types/message';
+import type { User } from '../types/user';
+import { getLoggedUserId } from '../utils/getLoggedUserId';
 import {
   createConversation,
   getConversations,
   getMessages,
   getUsers,
   sendMessage,
-} from '../utils/messagingApi'
+} from '../utils/messagingApi';
 import {
   formatConversationTimestamp,
   formatTimestamp,
   getConversationParticipant,
   sortConversations,
   sortMessages,
-} from '../utils/messagingView'
-import styles from '../styles/Home.module.css'
+} from '../utils/messagingView';
+import styles from '../styles/Home.module.css';
 
-const MAX_MESSAGE_LENGTH = 1000
-const REFRESH_INTERVAL_MS = 15000
-const loggedUserId = getLoggedUserId()
+const MAX_MESSAGE_LENGTH = 1000;
+const REFRESH_INTERVAL_MS = 15000;
+const loggedUserId = getLoggedUserId();
 
-type LoadState = 'idle' | 'loading' | 'success' | 'error'
+type LoadState = 'idle' | 'loading' | 'success' | 'error';
 type LoadOptions = {
-  silent?: boolean
-}
+  silent?: boolean;
+};
 
 const Home = (): ReactElement => {
-  const [conversations, setConversations] = useState<Conversation[]>([])
-  const [users, setUsers] = useState<User[]>([])
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<
     number | null
-  >(null)
-  const [messages, setMessages] = useState<Message[]>([])
-  const [conversationState, setConversationState] = useState<LoadState>('idle')
-  const [messageState, setMessageState] = useState<LoadState>('idle')
-  const [userState, setUserState] = useState<LoadState>('idle')
-  const [conversationSearch, setConversationSearch] = useState('')
+  >(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [conversationState, setConversationState] = useState<LoadState>('idle');
+  const [messageState, setMessageState] = useState<LoadState>('idle');
+  const [userState, setUserState] = useState<LoadState>('idle');
+  const [conversationSearch, setConversationSearch] = useState('');
   const [newConversationRecipientQuery, setNewConversationRecipientQuery] =
-    useState('')
-  const [isCreatingConversation, setIsCreatingConversation] = useState(false)
+    useState('');
+  const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [createConversationError, setCreateConversationError] = useState<
     string | null
-  >(null)
-  const [draft, setDraft] = useState('')
-  const [isSending, setIsSending] = useState(false)
-  const [sendError, setSendError] = useState<string | null>(null)
-  const [isThreadVisibleOnMobile, setIsThreadVisibleOnMobile] = useState(false)
+  >(null);
+  const [draft, setDraft] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [isThreadVisibleOnMobile, setIsThreadVisibleOnMobile] = useState(false);
 
   const orderedConversations = useMemo(
     () => sortConversations(conversations),
     [conversations]
-  )
+  );
   const filteredConversations = useMemo(() => {
-    const normalizedSearch = conversationSearch.trim().toLowerCase()
+    const normalizedSearch = conversationSearch.trim().toLowerCase();
 
     if (normalizedSearch.length === 0) {
-      return orderedConversations
+      return orderedConversations;
     }
 
     return orderedConversations.filter((conversation) => {
-      const participant = getConversationParticipant(conversation, loggedUserId)
+      const participant = getConversationParticipant(
+        conversation,
+        loggedUserId
+      );
 
-      return participant.nickname.toLowerCase().includes(normalizedSearch)
-    })
-  }, [conversationSearch, orderedConversations])
+      return participant.nickname.toLowerCase().includes(normalizedSearch);
+    });
+  }, [conversationSearch, orderedConversations]);
   const selectedConversation = useMemo(
     () =>
       orderedConversations.find(
         (conversation) => conversation.id === selectedConversationId
       ) ?? null,
     [orderedConversations, selectedConversationId]
-  )
+  );
   const selectedParticipant = selectedConversation
     ? getConversationParticipant(selectedConversation, loggedUserId)
-    : null
-  const orderedMessages = useMemo(() => sortMessages(messages), [messages])
+    : null;
+  const orderedMessages = useMemo(() => sortMessages(messages), [messages]);
   const availableRecipients = useMemo(
     () => users.filter((user) => user.id !== loggedUserId),
     [users]
-  )
+  );
   const matchingRecipients = useMemo(() => {
-    const normalizedQuery = newConversationRecipientQuery.trim().toLowerCase()
+    const normalizedQuery = newConversationRecipientQuery.trim().toLowerCase();
 
     if (normalizedQuery.length === 0) {
-      return availableRecipients
+      return availableRecipients;
     }
 
     return availableRecipients.filter((user) =>
       user.nickname.toLowerCase().includes(normalizedQuery)
-    )
-  }, [availableRecipients, newConversationRecipientQuery])
+    );
+  }, [availableRecipients, newConversationRecipientQuery]);
   const selectedRecipient = useMemo(() => {
-    const normalizedQuery = newConversationRecipientQuery.trim().toLowerCase()
+    const normalizedQuery = newConversationRecipientQuery.trim().toLowerCase();
 
     if (normalizedQuery.length === 0) {
-      return null
+      return null;
     }
 
     return (
       availableRecipients.find(
         (user) => user.nickname.toLowerCase() === normalizedQuery
       ) ?? (matchingRecipients.length === 1 ? matchingRecipients[0] : null)
-    )
-  }, [availableRecipients, matchingRecipients, newConversationRecipientQuery])
+    );
+  }, [availableRecipients, matchingRecipients, newConversationRecipientQuery]);
   const hasExactRecipientMatch =
     selectedRecipient !== null &&
     selectedRecipient.nickname.toLowerCase() ===
-      newConversationRecipientQuery.trim().toLowerCase()
+      newConversationRecipientQuery.trim().toLowerCase();
   const existingConversationForSelectedRecipient = selectedRecipient
     ? (orderedConversations.find(
         (conversation) =>
           getConversationParticipant(conversation, loggedUserId).id ===
           selectedRecipient.id
       ) ?? null)
-    : null
+    : null;
   const shouldShowRecipientSuggestions =
     userState === 'success' &&
     newConversationRecipientQuery.trim().length > 0 &&
     matchingRecipients.length > 0 &&
-    !hasExactRecipientMatch
+    !hasExactRecipientMatch;
   const canCreateConversation =
     userState === 'success' &&
     selectedRecipient !== null &&
     matchingRecipients.length > 0 &&
-    !isCreatingConversation
+    !isCreatingConversation;
   const loggedUser = users.find((user) => user.id === loggedUserId) ?? {
     id: loggedUserId,
     nickname: `Utilisateur ${loggedUserId}`,
     token: '',
-  }
-  const trimmedDraft = draft.trim()
-  const isDraftTooLong = draft.length > MAX_MESSAGE_LENGTH
+  };
+  const trimmedDraft = draft.trim();
+  const isDraftTooLong = draft.length > MAX_MESSAGE_LENGTH;
   const canSend =
     trimmedDraft.length > 0 &&
     !isDraftTooLong &&
     !isSending &&
     selectedConversation !== null &&
-    messageState === 'success'
+    messageState === 'success';
 
   const loadConversations = useCallback(async (options?: LoadOptions) => {
     if (!options?.silent) {
-      setConversationState('loading')
+      setConversationState('loading');
     }
 
     try {
-      const result = sortConversations(await getConversations(loggedUserId))
+      const result = sortConversations(await getConversations(loggedUserId));
 
-      setConversations(result)
-      setConversationState('success')
+      setConversations(result);
+      setConversationState('success');
       setSelectedConversationId((currentId) => {
         if (
           currentId !== null &&
           result.some((conversation) => conversation.id === currentId)
         ) {
-          return currentId
+          return currentId;
         }
 
-        return result[0]?.id ?? null
-      })
+        return result[0]?.id ?? null;
+      });
     } catch {
-      setConversationState('error')
+      setConversationState('error');
     }
-  }, [])
+  }, []);
 
   const loadUsers = useCallback(async () => {
-    setUserState('loading')
+    setUserState('loading');
 
     try {
-      const result = await getUsers()
+      const result = await getUsers();
 
-      setUsers(result)
-      setUserState('success')
+      setUsers(result);
+      setUserState('success');
     } catch {
-      setUserState('error')
+      setUserState('error');
     }
-  }, [])
+  }, []);
+
+  const retryInitialData = (): void => {
+    void loadConversations();
+    void loadUsers();
+  };
 
   const loadMessages = useCallback(
     async (conversationId: number, options?: LoadOptions) => {
       if (!options?.silent) {
-        setMessageState('loading')
+        setMessageState('loading');
       }
-      setSendError(null)
+      setSendError(null);
 
       try {
-        setMessages(sortMessages(await getMessages(conversationId)))
-        setMessageState('success')
+        setMessages(sortMessages(await getMessages(conversationId)));
+        setMessageState('success');
       } catch {
         if (!options?.silent) {
-          setMessages([])
+          setMessages([]);
         }
-        setMessageState('error')
+        setMessageState('error');
       }
     },
     []
-  )
+  );
 
   useEffect(() => {
-    void loadConversations()
-  }, [loadConversations])
+    void loadConversations();
+  }, [loadConversations]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
-      void loadConversations({ silent: true })
-    }, REFRESH_INTERVAL_MS)
+      void loadConversations({ silent: true });
+    }, REFRESH_INTERVAL_MS);
 
-    return () => window.clearInterval(intervalId)
-  }, [loadConversations])
+    return () => window.clearInterval(intervalId);
+  }, [loadConversations]);
 
   useEffect(() => {
-    void loadUsers()
-  }, [loadUsers])
+    void loadUsers();
+  }, [loadUsers]);
 
   useEffect(() => {
     if (selectedConversationId === null) {
-      setMessages([])
-      setMessageState('idle')
-      return
+      setMessages([]);
+      setMessageState('idle');
+      return;
     }
 
-    void loadMessages(selectedConversationId)
-  }, [loadMessages, selectedConversationId])
+    void loadMessages(selectedConversationId);
+  }, [loadMessages, selectedConversationId]);
 
   useEffect(() => {
     if (selectedConversationId === null) {
-      return undefined
+      return undefined;
     }
 
     const intervalId = window.setInterval(() => {
-      void loadMessages(selectedConversationId, { silent: true })
-    }, REFRESH_INTERVAL_MS)
+      void loadMessages(selectedConversationId, { silent: true });
+    }, REFRESH_INTERVAL_MS);
 
-    return () => window.clearInterval(intervalId)
-  }, [loadMessages, selectedConversationId])
+    return () => window.clearInterval(intervalId);
+  }, [loadMessages, selectedConversationId]);
 
   const handleSelectConversation = (conversationId: number): void => {
-    setSelectedConversationId(conversationId)
-    setIsThreadVisibleOnMobile(true)
-  }
+    setSelectedConversationId(conversationId);
+    setIsThreadVisibleOnMobile(true);
+  };
 
   const handleCreateConversation = async (
     event: FormEvent<HTMLFormElement>
   ): Promise<void> => {
-    event.preventDefault()
+    event.preventDefault();
 
-    const recipient = selectedRecipient
+    const recipient = selectedRecipient;
 
     if (recipient === null || isCreatingConversation) {
-      return
+      return;
     }
 
     if (existingConversationForSelectedRecipient !== null) {
-      setSelectedConversationId(existingConversationForSelectedRecipient.id)
-      setNewConversationRecipientQuery('')
-      setCreateConversationError(null)
-      setIsThreadVisibleOnMobile(true)
-      return
+      setSelectedConversationId(existingConversationForSelectedRecipient.id);
+      setNewConversationRecipientQuery('');
+      setCreateConversationError(null);
+      setIsThreadVisibleOnMobile(true);
+      return;
     }
 
-    const lastMessageTimestamp = Math.floor(Date.now() / 1000)
+    const lastMessageTimestamp = Math.floor(Date.now() / 1000);
     const nextConversation = {
       recipientId: recipient.id,
       recipientNickname: recipient.nickname,
@@ -271,53 +279,53 @@ const Home = (): ReactElement => {
       senderNickname: loggedUser.nickname,
       lastMessageTimestamp,
       lastMessageBody: '',
-    }
+    };
 
-    setIsCreatingConversation(true)
-    setCreateConversationError(null)
+    setIsCreatingConversation(true);
+    setCreateConversationError(null);
 
     try {
       const createdConversation = await createConversation(
         loggedUserId,
         nextConversation
-      )
+      );
       const conversation = {
         id: createdConversation.id,
         ...nextConversation,
-      }
+      };
 
       setConversations((currentConversations) =>
         sortConversations([conversation, ...currentConversations])
-      )
-      setSelectedConversationId(createdConversation.id)
-      setMessages([])
-      setMessageState('success')
-      setDraft('')
-      setNewConversationRecipientQuery('')
-      setIsThreadVisibleOnMobile(true)
+      );
+      setSelectedConversationId(createdConversation.id);
+      setMessages([]);
+      setMessageState('success');
+      setDraft('');
+      setNewConversationRecipientQuery('');
+      setIsThreadVisibleOnMobile(true);
     } catch {
       setCreateConversationError(
-        'La conversation n’a pas pu etre creee. Vous pouvez reessayer.'
-      )
+        'La conversation n’a pas pu être créée. Vous pouvez réessayer.'
+      );
     } finally {
-      setIsCreatingConversation(false)
+      setIsCreatingConversation(false);
     }
-  }
+  };
 
   const handleSendMessage = async (
     event: FormEvent<HTMLFormElement>
   ): Promise<void> => {
-    event.preventDefault()
+    event.preventDefault();
 
     if (!canSend || selectedConversation === null) {
-      return
+      return;
     }
 
-    const body = trimmedDraft
-    const timestamp = Math.floor(Date.now() / 1000)
+    const body = trimmedDraft;
+    const timestamp = Math.floor(Date.now() / 1000);
 
-    setIsSending(true)
-    setSendError(null)
+    setIsSending(true);
+    setSendError(null);
 
     try {
       const createdMessage = await sendMessage(
@@ -325,18 +333,18 @@ const Home = (): ReactElement => {
         loggedUserId,
         body,
         timestamp
-      )
+      );
       const nextMessage: Message = {
         id: createdMessage.id,
         conversationId: selectedConversation.id,
         authorId: loggedUserId,
         timestamp,
         body,
-      }
+      };
 
       setMessages((currentMessages) =>
         sortMessages([...currentMessages, nextMessage])
-      )
+      );
       setConversations((currentConversations) =>
         sortConversations(
           currentConversations.map((conversation) =>
@@ -349,16 +357,16 @@ const Home = (): ReactElement => {
               : conversation
           )
         )
-      )
-      setDraft('')
+      );
+      setDraft('');
     } catch {
       setSendError(
-        'Votre message n’a pas pu etre envoye. Vous pouvez reessayer.'
-      )
+        'Votre message n’a pas pu être envoyé. Vous pouvez réessayer.'
+      );
     } finally {
-      setIsSending(false)
+      setIsSending(false);
     }
-  }
+  };
 
   return (
     <div className={styles.container}>
@@ -376,7 +384,7 @@ const Home = (): ReactElement => {
           <p className={styles.eyebrow}>leboncoin</p>
           <h1 className={styles.title}>Messages</h1>
         </div>
-        <div className={styles.currentUser} aria-label="Utilisateur connecte">
+        <div className={styles.currentUser} aria-label="Utilisateur connecté">
           <span className={styles.currentUserAvatar} aria-hidden="true">
             {loggedUser.nickname.charAt(0).toUpperCase()}
           </span>
@@ -429,9 +437,9 @@ const Home = (): ReactElement => {
               <button
                 className={styles.inlineButton}
                 type="button"
-                onClick={() => loadConversations()}
+                onClick={retryInitialData}
               >
-                Reessayer
+                Réessayer
               </button>
             </div>
           )}
@@ -447,7 +455,7 @@ const Home = (): ReactElement => {
             orderedConversations.length > 0 &&
             filteredConversations.length === 0 && (
               <div className={styles.emptyState}>
-                Aucune conversation ne correspond a cette recherche.
+                Aucune conversation ne correspond à cette recherche.
               </div>
             )}
 
@@ -460,8 +468,8 @@ const Home = (): ReactElement => {
                 const participant = getConversationParticipant(
                   conversation,
                   loggedUserId
-                )
-                const isSelected = conversation.id === selectedConversationId
+                );
+                const isSelected = conversation.id === selectedConversationId;
 
                 return (
                   <li key={conversation.id}>
@@ -495,7 +503,7 @@ const Home = (): ReactElement => {
                       />
                     </button>
                   </li>
-                )
+                );
               })}
             </ul>
           )}
@@ -507,7 +515,7 @@ const Home = (): ReactElement => {
             {shouldShowRecipientSuggestions && (
               <div
                 className={styles.recipientSuggestions}
-                aria-label="Contacts suggeres"
+                aria-label="Contacts suggérés"
               >
                 {matchingRecipients.map((user) => (
                   <button
@@ -567,10 +575,10 @@ const Home = (): ReactElement => {
                 className={styles.createConversationButton}
                 disabled={!canCreateConversation}
                 type="submit"
-                title={isCreatingConversation ? 'Creation...' : 'Creer'}
+                title={isCreatingConversation ? 'Création...' : 'Créer'}
               >
                 <span className={styles.srOnly}>
-                  {isCreatingConversation ? 'Creation...' : 'Creer'}
+                  {isCreatingConversation ? 'Création...' : 'Créer'}
                 </span>
                 <svg
                   className={styles.createConversationIcon}
@@ -595,7 +603,7 @@ const Home = (): ReactElement => {
                   type="button"
                   onClick={loadUsers}
                 >
-                  Reessayer
+                  Réessayer
                 </button>
               </p>
             )}
@@ -623,7 +631,7 @@ const Home = (): ReactElement => {
         >
           {selectedConversation === null ? (
             <div className={styles.emptyThread}>
-              Selectionnez une conversation pour consulter les messages.
+              Sélectionnez une conversation pour consulter les messages.
             </div>
           ) : (
             <>
@@ -673,7 +681,7 @@ const Home = (): ReactElement => {
                       type="button"
                       onClick={() => loadMessages(selectedConversation.id)}
                     >
-                      Reessayer
+                      Réessayer
                     </button>
                   </div>
                 )}
@@ -685,7 +693,7 @@ const Home = (): ReactElement => {
                 )}
 
                 {orderedMessages.map((message) => {
-                  const isOwnMessage = message.authorId === loggedUserId
+                  const isOwnMessage = message.authorId === loggedUserId;
 
                   return (
                     <article
@@ -705,7 +713,7 @@ const Home = (): ReactElement => {
                         </time>
                       </div>
                     </article>
-                  )
+                  );
                 })}
               </div>
 
@@ -767,7 +775,7 @@ const Home = (): ReactElement => {
         </section>
       </main>
     </div>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;

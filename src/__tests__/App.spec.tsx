@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import App from '../pages'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import App from '../pages';
 
 const conversations = [
   {
@@ -20,7 +20,7 @@ const conversations = [
     lastMessageTimestamp: 1625648667,
     lastMessageBody: 'Bonjour Thibaut',
   },
-]
+];
 
 const conversationOneMessages = [
   {
@@ -30,7 +30,7 @@ const conversationOneMessages = [
     authorId: 1,
     body: 'Bonjour Jeremie',
   },
-]
+];
 
 const conversationThreeMessages = [
   {
@@ -40,7 +40,7 @@ const conversationThreeMessages = [
     authorId: 4,
     body: 'Bonjour Thibaut',
   },
-]
+];
 
 const users = [
   {
@@ -63,335 +63,343 @@ const users = [
     nickname: 'Elodie',
     token: 'xxxx',
   },
-]
+];
 
 const mockJson = (data: unknown, ok = true): Promise<Response> => {
   return Promise.resolve({
     ok,
     status: ok ? 200 : 503,
     json: () => Promise.resolve(data),
-  } as Response)
-}
+  } as Response);
+};
 
 const setupFetchMock = (): jest.Mock => {
   const fetchMock = jest.fn((input: RequestInfo | URL, init?: RequestInit) => {
-    const url = String(input)
+    const url = String(input);
 
     if (url.endsWith('/conversations/1')) {
       if (init?.method === 'POST') {
-        return mockJson({ id: 9 })
+        return mockJson({ id: 9 });
       }
 
-      return mockJson(conversations)
+      return mockJson(conversations);
     }
 
     if (url.endsWith('/users')) {
-      return mockJson(users)
+      return mockJson(users);
     }
 
     if (url.endsWith('/messages/3') && init?.method !== 'POST') {
-      return mockJson(conversationThreeMessages)
+      return mockJson(conversationThreeMessages);
     }
 
     if (url.endsWith('/messages/1') && init?.method !== 'POST') {
-      return mockJson(conversationOneMessages)
+      return mockJson(conversationOneMessages);
     }
 
     if (url.endsWith('/messages/9') && init?.method !== 'POST') {
-      return mockJson([])
+      return mockJson([]);
     }
 
     if (url.endsWith('/messages/3') && init?.method === 'POST') {
-      return mockJson({ id: 42 })
+      return mockJson({ id: 42 });
     }
 
-    return mockJson(null, false)
-  })
+    return mockJson(null, false);
+  });
 
-  global.fetch = fetchMock
-  return fetchMock
-}
+  global.fetch = fetchMock;
+  return fetchMock;
+};
 
 describe('App', () => {
   beforeEach(() => {
-    jest.restoreAllMocks()
-  })
+    jest.restoreAllMocks();
+  });
 
   it('loads and renders the conversation list with the newest conversation selected', async () => {
-    setupFetchMock()
+    setupFetchMock();
 
-    render(<App />)
+    render(<App />);
 
     expect(
       screen.getByText('Chargement des conversations...')
-    ).toBeInTheDocument()
+    ).toBeInTheDocument();
     expect(
       await screen.findByRole('button', { name: /Elodie/i })
-    ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Jeremie/i })).toBeInTheDocument()
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Jeremie/i })
+    ).toBeInTheDocument();
     expect(
       await screen.findByRole('heading', { name: 'Elodie' })
-    ).toBeInTheDocument()
-    expect(screen.getAllByText('Bonjour Thibaut')).toHaveLength(2)
-  })
+    ).toBeInTheDocument();
+    expect(screen.getAllByText('Bonjour Thibaut')).toHaveLength(2);
+  });
 
   it('loads messages when a conversation is selected', async () => {
-    setupFetchMock()
+    setupFetchMock();
 
-    render(<App />)
+    render(<App />);
 
     const jeremieConversation = await screen.findByRole('button', {
       name: /Jeremie/i,
-    })
-    fireEvent.click(jeremieConversation)
+    });
+    fireEvent.click(jeremieConversation);
 
     expect(
       await screen.findByRole('heading', { name: 'Jeremie' })
-    ).toBeInTheDocument()
-    expect(await screen.findByText('Bonjour Jeremie')).toBeInTheDocument()
-  })
+    ).toBeInTheDocument();
+    expect(await screen.findByText('Bonjour Jeremie')).toBeInTheDocument();
+  });
 
   it('filters conversations by typed contact name', async () => {
-    setupFetchMock()
+    setupFetchMock();
 
-    render(<App />)
+    render(<App />);
 
     expect(
       await screen.findByRole('button', { name: /Elodie/i })
-    ).toBeInTheDocument()
+    ).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Rechercher'), {
       target: { value: 'jer' },
-    })
+    });
 
-    expect(screen.getByRole('button', { name: /Jeremie/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /Jeremie/i })
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: /Elodie/i })
-    ).not.toBeInTheDocument()
-  })
+    ).not.toBeInTheDocument();
+  });
 
   it('sends a valid message after the API confirms creation', async () => {
-    const fetchMock = setupFetchMock()
+    const fetchMock = setupFetchMock();
 
-    render(<App />)
+    render(<App />);
 
-    const input = await screen.findByLabelText('Nouveau message')
+    const input = await screen.findByLabelText('Nouveau message');
     fireEvent.change(input, {
       target: { value: '  Est-ce toujours disponible ?  ' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: 'Envoyer' }))
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Envoyer' }));
 
     expect(
       await screen.findByText('Est-ce toujours disponible ?')
-    ).toBeInTheDocument()
+    ).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:3005/messages/3',
       expect.objectContaining({
         method: 'POST',
         body: expect.stringContaining('Est-ce toujours disponible ?'),
       })
-    )
+    );
     expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:3005/messages/3',
       expect.objectContaining({
         body: expect.stringContaining('"authorId":1'),
       })
-    )
+    );
     expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:3005/messages/3',
       expect.objectContaining({
         body: expect.stringContaining('"conversationId":3'),
       })
-    )
-  })
+    );
+  });
 
   it('creates a new conversation and selects it', async () => {
-    const fetchMock = setupFetchMock()
+    const fetchMock = setupFetchMock();
 
-    render(<App />)
+    render(<App />);
 
     const recipientInput = await screen.findByLabelText(
       'Nouvelle conversation'
-    )
+    );
 
-    fireEvent.change(recipientInput, { target: { value: 'Patrick' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Creer' }))
+    fireEvent.change(recipientInput, { target: { value: 'Patrick' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Créer' }));
 
     expect(
       await screen.findByRole('heading', { name: 'Patrick' })
-    ).toBeInTheDocument()
+    ).toBeInTheDocument();
     expect(
       await screen.findByText('Aucun message dans cette conversation.')
-    ).toBeInTheDocument()
+    ).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:3005/conversations/1',
       expect.objectContaining({
         method: 'POST',
         body: expect.stringContaining('"recipientId":3'),
       })
-    )
+    );
     expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:3005/conversations/1',
       expect.objectContaining({
         body: expect.stringContaining('"lastMessageBody":""'),
       })
-    )
-  })
+    );
+  });
 
   it('opens an existing conversation instead of creating a duplicate', async () => {
-    const fetchMock = setupFetchMock()
+    const fetchMock = setupFetchMock();
 
-    render(<App />)
+    render(<App />);
 
     const recipientInput = await screen.findByLabelText(
       'Nouvelle conversation'
-    )
+    );
 
-    fireEvent.change(recipientInput, { target: { value: 'Jeremie' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Creer' }))
+    fireEvent.change(recipientInput, { target: { value: 'Jeremie' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Créer' }));
 
     expect(
       await screen.findByRole('heading', { name: 'Jeremie' })
-    ).toBeInTheDocument()
-    expect(await screen.findAllByText('Bonjour Jeremie')).toHaveLength(2)
+    ).toBeInTheDocument();
+    expect(await screen.findAllByText('Bonjour Jeremie')).toHaveLength(2);
     expect(fetchMock).not.toHaveBeenCalledWith(
       'http://localhost:3005/conversations/1',
       expect.objectContaining({ method: 'POST' })
-    )
-  })
+    );
+  });
 
   it('shows contact suggestions while typing a new conversation recipient', async () => {
-    setupFetchMock()
+    setupFetchMock();
 
-    render(<App />)
+    render(<App />);
 
     const recipientInput = await screen.findByLabelText(
       'Nouvelle conversation'
-    )
+    );
 
-    fireEvent.change(recipientInput, { target: { value: 'Pat' } })
+    fireEvent.change(recipientInput, { target: { value: 'Pat' } });
 
     expect(
       await screen.findByRole('button', { name: 'Patrick' })
-    ).toBeInTheDocument()
-  })
+    ).toBeInTheDocument();
+  });
 
   it('disables conversation creation when no contact matches', async () => {
-    setupFetchMock()
+    setupFetchMock();
 
-    render(<App />)
+    render(<App />);
 
     const recipientInput = await screen.findByLabelText(
       'Nouvelle conversation'
-    )
+    );
 
-    fireEvent.change(recipientInput, { target: { value: 'Inconnu' } })
+    fireEvent.change(recipientInput, { target: { value: 'Inconnu' } });
 
-    expect(await screen.findByText('Aucun contact trouvé.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Creer' })).toBeDisabled()
-  })
+    expect(
+      await screen.findByText('Aucun contact trouvé.')
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Créer' })).toBeDisabled();
+  });
 
   it('does not send an empty message', async () => {
-    const fetchMock = setupFetchMock()
+    const fetchMock = setupFetchMock();
 
-    render(<App />)
+    render(<App />);
 
-    const input = await screen.findByLabelText('Nouveau message')
-    fireEvent.change(input, { target: { value: '    ' } })
+    const input = await screen.findByLabelText('Nouveau message');
+    fireEvent.change(input, { target: { value: '    ' } });
 
-    expect(screen.getByRole('button', { name: 'Envoyer' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Envoyer' })).toBeDisabled();
     expect(fetchMock).not.toHaveBeenCalledWith(
       expect.stringContaining('/messages/3'),
       expect.objectContaining({ method: 'POST' })
-    )
-  })
+    );
+  });
 
   it('shows a retryable error when conversations cannot load', async () => {
-    global.fetch = jest.fn(() => mockJson(null, false))
+    global.fetch = jest.fn(() => mockJson(null, false));
 
-    render(<App />)
+    render(<App />);
 
     expect(
       await screen.findByText('Impossible de charger les conversations.')
-    ).toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: 'Reessayer' })).toHaveLength(2)
-  })
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Réessayer' })).toHaveLength(
+      2
+    );
+  });
 
   it('reloads contacts when retrying the main conversation error', async () => {
-    let conversationRequests = 0
-    let userRequests = 0
+    let conversationRequests = 0;
+    let userRequests = 0;
 
     global.fetch = jest.fn((input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input)
+      const url = String(input);
 
       if (url.endsWith('/conversations/1')) {
-        conversationRequests += 1
+        conversationRequests += 1;
 
         return conversationRequests === 1
           ? mockJson(null, false)
-          : mockJson(conversations)
+          : mockJson(conversations);
       }
 
       if (url.endsWith('/users')) {
-        userRequests += 1
+        userRequests += 1;
 
-        return userRequests === 1 ? mockJson(null, false) : mockJson(users)
+        return userRequests === 1 ? mockJson(null, false) : mockJson(users);
       }
 
       if (url.endsWith('/messages/3') && init?.method !== 'POST') {
-        return mockJson(conversationThreeMessages)
+        return mockJson(conversationThreeMessages);
       }
 
-      return mockJson(null, false)
-    })
+      return mockJson(null, false);
+    });
 
-    render(<App />)
+    render(<App />);
 
     expect(
       await screen.findByText('Impossible de charger les conversations.')
-    ).toBeInTheDocument()
+    ).toBeInTheDocument();
     expect(
       await screen.findByText('Impossible de charger les contacts.')
-    ).toBeInTheDocument()
+    ).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Reessayer' })[0])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Réessayer' })[0]);
 
     expect(
       await screen.findByRole('button', { name: /Elodie/i })
-    ).toBeInTheDocument()
+    ).toBeInTheDocument();
     await waitFor(() =>
       expect(
         screen.queryByText('Impossible de charger les contacts.')
       ).not.toBeInTheDocument()
-    )
-  })
+    );
+  });
 
   it('keeps the draft when sending fails', async () => {
     global.fetch = jest.fn((input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input)
+      const url = String(input);
 
       if (url.endsWith('/conversations/1')) {
-        return mockJson(conversations)
+        return mockJson(conversations);
       }
 
       if (url.endsWith('/users')) {
-        return mockJson(users)
+        return mockJson(users);
       }
 
       if (url.endsWith('/messages/3') && init?.method !== 'POST') {
-        return mockJson(conversationThreeMessages)
+        return mockJson(conversationThreeMessages);
       }
 
-      return mockJson(null, false)
-    })
+      return mockJson(null, false);
+    });
 
-    render(<App />)
+    render(<App />);
 
-    const input = await screen.findByLabelText('Nouveau message')
-    fireEvent.change(input, { target: { value: 'Message a conserver' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Envoyer' }))
+    const input = await screen.findByLabelText('Nouveau message');
+    fireEvent.change(input, { target: { value: 'Message a conserver' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Envoyer' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Votre message')
-    expect(screen.getByDisplayValue('Message a conserver')).toBeInTheDocument()
-  })
-})
+    expect(await screen.findByRole('alert')).toHaveTextContent('Votre message');
+    expect(screen.getByDisplayValue('Message a conserver')).toBeInTheDocument();
+  });
+});
