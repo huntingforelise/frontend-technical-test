@@ -526,39 +526,58 @@
 
 .composer {
   border-top: 1px solid var(--color-border);
-  padding: 1rem;
+  padding: 0.75rem 1rem 1rem;
   background: var(--color-surface);
+}
+
+.composerField {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: var(--color-bg);
+  padding: 0.5rem;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.composerField:focus-within {
+  border-color: var(--color-focus-border);
+  background: var(--color-surface);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
 }
 
 .textarea {
   display: block;
   width: 100%;
-  min-height: 88px;
+  min-height: 44px;
   resize: vertical;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  padding: 0.75rem;
+  border: 0;
+  background: transparent;
+  padding: 0.45rem 0.5rem;
+  color: var(--color-text);
   font: inherit;
   line-height: 1.4;
 }
 
 .textarea:focus {
-  border-color: var(--color-accent);
-  outline: 3px solid var(--color-accent-soft);
+  outline: none;
 }
 
-.composerFooter {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-top: 0.75rem;
+.textarea::placeholder {
+  color: var(--color-muted);
+  opacity: 1;
 }
 
 .helpText {
-  margin: 0;
+  margin: 0.35rem 0 0;
   color: var(--color-muted);
-  font-size: var(--text-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .helpTextError,
@@ -582,12 +601,19 @@
 }
 
 .primaryButton {
-  min-width: 108px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
   background: var(--color-accent);
   color: var(--color-surface);
-  padding: 0.75rem 1rem;
+  padding: 0;
+  border-radius: 50%;
   box-shadow: var(--shadow-raised);
   transition:
+    background 160ms ease,
     box-shadow 160ms ease,
     transform 160ms ease;
 }
@@ -603,6 +629,12 @@
   color: var(--color-muted);
   box-shadow: none;
   cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.sendIcon {
+  width: 20px;
+  height: 20px;
 }
 
 .secondaryButton,

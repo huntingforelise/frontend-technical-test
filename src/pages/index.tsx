@@ -701,31 +701,49 @@ const Home = (): ReactElement => {
                 <label className={styles.srOnly} htmlFor="message-body">
                   Nouveau message
                 </label>
-                <textarea
-                  id="message-body"
-                  aria-describedby="message-help"
-                  className={styles.textarea}
-                  maxLength={MAX_MESSAGE_LENGTH + 1}
-                  onChange={(event) => setDraft(event.target.value)}
-                  placeholder="Écrivez votre message"
-                  value={draft}
-                  disabled={isSending || messageState === 'loading'}
-                />
-                <div className={styles.composerFooter}>
-                  <p
-                    className={`${styles.helpText} ${isDraftTooLong ? styles.helpTextError : ''}`}
-                    id="message-help"
-                  >
-                    {draft.length}/{MAX_MESSAGE_LENGTH}
-                  </p>
+                <div className={styles.composerField}>
+                  <textarea
+                    id="message-body"
+                    aria-describedby="message-help"
+                    className={styles.textarea}
+                    maxLength={MAX_MESSAGE_LENGTH + 1}
+                    onChange={(event) => setDraft(event.target.value)}
+                    placeholder="Écrivez votre message"
+                    value={draft}
+                    disabled={isSending || messageState === 'loading'}
+                  />
                   <button
                     className={styles.primaryButton}
                     type="submit"
                     disabled={!canSend}
+                    title={isSending ? 'Envoi...' : 'Envoyer'}
                   >
-                    {isSending ? 'Envoi...' : 'Envoyer'}
+                    <span className={styles.srOnly}>
+                      {isSending ? 'Envoi...' : 'Envoyer'}
+                    </span>
+                    <svg
+                      aria-hidden="true"
+                      focusable="false"
+                      viewBox="0 0 24 24"
+                      className={styles.sendIcon}
+                    >
+                      <path
+                        d="M4.5 19.5L20 12L4.5 4.5L7 11.4L14 12L7 12.6L4.5 19.5Z"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                      />
+                    </svg>
                   </button>
                 </div>
+                <p
+                  className={`${styles.helpText} ${isDraftTooLong ? styles.helpTextError : ''}`}
+                  id="message-help"
+                >
+                  {draft.length}/{MAX_MESSAGE_LENGTH}
+                </p>
                 {sendError !== null && (
                   <p className={styles.sendError} role="alert">
                     {sendError}
